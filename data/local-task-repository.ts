@@ -13,9 +13,10 @@ import {
   type UpdateTaskInput,
 } from "@/types/task";
 
-export const TASK_STORAGE_KEY = "taskflow.tasks.v1";
+export const TASK_STORAGE_KEY = "taskflow:v1:tasks";
 
 const STORAGE_VERSION = 1;
+const LEGACY_TASK_STORAGE_KEYS = ["taskflow.tasks.v1"] as const;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -295,6 +296,21 @@ export class LocalTaskRepository implements ResettableTaskRepository {
           }
         }
 
+        for (const legacyKey of LEGACY_TASK_STORAGE_KEYS) {
+          const legacyRaw = storage.getItem(legacyKey);
+          if (legacyRaw === null) continue;
+
+          const parsed = parseStoredTasks(legacyRaw);
+          if (!parsed) continue;
+
+          // Keep the legacy entry when persistence is blocked so migration can
+          // be retried safely on a later visit.
+          if (this.writeTasks(parsed)) {
+            storage.removeItem(legacyKey);
+          }
+
+          return cloneTasks(parsed);
+        }
       } catch {
         // Fall back to the in-memory copy when browser storage is unavailable.
       }
@@ -309,13 +325,13 @@ export class LocalTaskRepository implements ResettableTaskRepository {
     return cloneTasks(seeded);
   }
 
-  private writeTasks(tasks: readonly Task[]): void {
+  private writeTasks(tasks: readonly Task[]): boolean {
     const nextTasks = cloneTasks(tasks);
     this.volatileTasks = nextTasks;
 
     const storage = this.getStorage();
     if (!storage) {
-      return;
+      return false;
     }
 
     const payload: StoredTasks = {
@@ -326,8 +342,10 @@ export class LocalTaskRepository implements ResettableTaskRepository {
 
     try {
       storage.setItem(TASK_STORAGE_KEY, JSON.stringify(payload));
+      return true;
     } catch {
       // CRUD remains usable for this session even when persistence is blocked.
+      return false;
     }
   }
 
@@ -337,7 +355,13 @@ export class LocalTaskRepository implements ResettableTaskRepository {
   }
 
   private readonly handleStorage = (event: StorageEvent): void => {
-    if (event.key !== TASK_STORAGE_KEY && event.key !== null) {
+    if (
+      event.key !== TASK_STORAGE_KEY &&
+      event.key !== null &&
+      !LEGACY_TASK_STORAGE_KEYS.includes(
+        event.key as (typeof LEGACY_TASK_STORAGE_KEYS)[number],
+      )
+    ) {
       return;
     }
 
