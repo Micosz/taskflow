@@ -13,3 +13,10 @@ export {
   type TaskView,
   type UpdateTaskInput,
 } from "./task";
+export {
+  getCourseDedupeKey,
+  getCourseDisplayLabel,
+  type Course,
+  type CreateCourseInput,
+  type UpdateCourseInput,
+} from "./course";
