@@ -1,70 +1,71 @@
-# Design QA
+# Design QA — Layout Polish
 
 ## Comparison Target
 
-- Source visual truth: `/home/micosz/.codex/generated_images/01a06d39-c2c2-7801-973f-b7342489d9bf/exec-1ec10e55-5d5e-4365-bf81-6ca997c6c572.png`
-- Source pixels: 1487 × 1058 PNG.
-- Implementation: `http://127.0.0.1:4173/`
-- Implementation screenshot evidence: Codex in-app Browser, clean QA Tab 3, captured on 2026-09-04 after the final reload.
-- Implementation capture pixels / CSS viewport: 1268 × 713 at device scale factor 1.
-- State: English, guest mode, Unfinished view, no search query, no modal open.
-- Density normalization: both references were reviewed at 1× display density; the source was proportionally scaled to the implementation capture for composition review without stretching.
+- Source visual truth:
+  - `/tmp/codex-clipboard-89542c24-3c03-425a-b556-0e3e2f9e3199.png` — search/add collision, 338 × 88 PNG.
+  - `/tmp/codex-clipboard-fe7e2154-d90e-407e-82a4-8cddab4e209f.png` — focus-panel spacing and text, 807 × 881 PNG.
+  - `/tmp/codex-clipboard-439c0a03-376f-48bd-b234-c5e4737f9d7c.png` — focus footer below the viewport, 784 × 139 PNG.
+  - `/tmp/codex-clipboard-dac51805-7ec1-410f-8621-39c9a6018e3b.png` — task timer/action collision, 762 × 144 PNG.
+- Implementation: `http://127.0.0.1:4173/`.
+- Implementation screenshot evidence: Codex in-app Browser Tab 3 capture (browser-rendered tool artifact; the capture API did not expose a local filesystem path).
+- Implementation pixels / CSS viewport: 1280 × 720 at device scale factor 1.
+- State: Thai UI, guest mode, Unfinished view, no search query, no modal open, browser zoom 100%.
+- Normalization: the sources are focused issue crops rather than a single full-page mock. Each crop was compared to its matching region in the 1280 × 720 browser capture at 1× density; no density conversion was needed.
 
 ## Full-view Comparison Evidence
 
-The final browser capture preserves the selected concept's defining composition: a restrained single-line top navigation, charcoal-black canvas, mineral-sage primary action, a cinematic left focus field with oversized urgent-task typography, and a lightweight right agenda divided into Now / Next / Later. The page uses the same calm high-contrast hierarchy, narrow technical labels, thin separators, subdued green accents, and controlled rust-red overdue signal as the selected visual.
-
-The implementation intentionally keeps TaskFlow's real Unfinished view and existing sample content instead of replacing it with invented tasks from the mock. At wide desktop widths the search control joins the top utility row; at the available 1268px QA viewport it moves to a dedicated compact row to prevent overlap.
+The revised browser capture was inspected with all four supplied source crops in the same task context. The updated page keeps the existing editorial composition and visual language while changing only the requested layout behavior. At 1280 × 720, the full document reports `clientHeight: 720` and `scrollHeight: 720`, so the page itself no longer scrolls. The left focus panel and the right agenda both end at y = 720; only the agenda is scrollable (`clientHeight: 627`, `scrollHeight: 1198`, `overflow-y: auto`).
 
 ## Focused Region Comparison Evidence
 
-- Top navigation: wordmark scale, navigation density, hairline active marker, sage Add task button, account state, language control, and settings control were individually checked and remain readable without collision.
-- Focus panel: headline wrapping, off-white optical weight, date/kicker spacing, overdue timer, course metadata, photographic mineral-sage atmosphere, progress summary, and completion affordance were checked against the selected left panel.
-- Agenda: group labels, row separation, checkbox size, task hierarchy, muted descriptions, course metadata, due states, hover actions, and the overdue marker were checked against the selected right panel.
-- No smaller crop was required after these regions were inspected in the browser capture because the relevant text and control details remained legible at the captured scale.
+- Search/add: the source shows the search underline running directly into the Add button. The revised topbar gives the search its own flex track and leaves a measured 19.19px gap before the Add button.
+- Focus inset/type: the source begins approximately at the panel edge and uses low-contrast description copy. The revised focus content starts 48px inside the panel; description text is 16px, `rgb(193, 196, 189)`, line-height 1.7, and clamps long copy to protect the footer.
+- Focus footer: the source footer falls below the available viewport. The revised footer ends at y = 705.61 within the 720px viewport, including the progress ring and complete button.
+- Timer/actions: the source edit pencil collides with the timer. The revised grid reserves an 80px action track and an independent 10.25–11rem due track with a measured 16px gap. Countdown text is brighter at `rgb(163, 168, 161)`, 11.52px, weight 500.
 
 ## Required Fidelity Surfaces
 
-- Fonts and typography: passed. Geist is retained for strong Thai/Latin coverage and closely matches the mock's neutral grotesk character. The implementation uses lighter display weights, tight headline tracking, 14–16px product text, and restrained uppercase micro-labels.
-- Spacing and layout rhythm: passed. The desktop split, topbar height, generous focus-panel whitespace, agenda group intervals, and hairline row rhythm match the selected direction. The 1268px fallback adds a compact search row as an intentional responsive constraint.
-- Colors and visual tokens: passed. Purple/neon dashboard styling was removed from the primary experience and replaced by near-black, off-white, mineral sage, muted graphite, and rust-red semantic overdue color.
-- Image quality and asset fidelity: passed. The visible cinematic surface is a dedicated 1440 × 900 raster asset at `/public/editorial-atmosphere.png`, generated for this composition and used without stretching, hotlinking, CSS drawing, or placeholder treatment.
-- Copy and content: passed. Real TaskFlow translations, live deadlines, courses, task descriptions, counts, and English/Thai controls are retained.
+- Fonts and typography: passed. Existing Geist/Thai coverage is retained. Focus description copy is larger and higher contrast without changing the display-title hierarchy; countdown copy is brighter and slightly larger/heavier.
+- Spacing and layout rhythm: passed. The focus panel now has a 48px left inset at 1280px, search and Add are separated, the focus footer stays inside the viewport, and task-row due/actions use distinct grid tracks.
+- Colors and visual tokens: passed. Existing near-black, off-white, mineral-sage, and overdue-rust tokens are preserved; only the low-contrast description/countdown foregrounds were raised.
+- Image quality and asset fidelity: passed. The existing `/public/editorial-atmosphere.png` raster remains unchanged and renders without crop or stretching regressions.
+- Copy and content: passed. Real TaskFlow translations, live deadlines, task descriptions, categories, and counts remain intact. Long descriptions are visually clamped in the focus summary only; full content remains available in task details.
 
 ## Findings
 
-- No actionable P0, P1, or P2 differences remain.
-- [P3] At intermediate desktop widths from 1024px to 1379px, search occupies a compact second utility row rather than the mock's single top row. This avoids overlap among navigation, account, language, and settings controls and is an acceptable responsive adaptation.
+- No actionable P0, P1, or P2 findings remain for the five reported issues.
+- [P3] The source crops contain different task content from the local guest fixture, so exact line-wrap matching is not meaningful. The revised focus region uses a height-aware title scale and four-line clamp below 800px viewport height to keep the equivalent long-content state safe.
 
 ## Interaction And Browser Verification
 
-- Search: filtered to `CS263`, updated the focus task and agenda to one result, then cleared successfully.
-- Navigation: Today and Unfinished views updated focus content and task rows successfully.
-- Add task: dialog opened with title, description, course/category, date, and time controls; close returned focus correctly.
-- Task details: opened from a task row and exposed edit, delete, and completion actions; close returned focus correctly.
-- Language: switched English → Thai → English; navigation, labels, date formatting, counts, and accessibility names updated.
-- Sticky behavior: top navigation remains above page content while staying below dialogs.
-- Console: fresh QA Tab 3 reported zero warnings and zero errors.
-- Automated checks: typecheck, lint, 63 tests, and production build passed.
+- Language switched English → Thai successfully; navigation, controls, dates, counts, and accessibility names updated.
+- Desktop at 100% zoom: document has no vertical overflow (`720 / 720`).
+- Agenda: independently scrollable (`1198 / 627`) while the focus panel remains fixed in the viewport.
+- Persistent focus controls: footer bottom is 14.39px above the viewport edge.
+- Search/add separation: 19.19px.
+- Due/action separation: 16px with an 80px reserved action area.
+- No Next.js error overlay was present in the final browser capture.
+- Automated checks: ESLint passed; TypeScript passed; 13 test files / 63 tests passed; production build passed.
 
 ## Comparison History
 
-1. Initial implementation review found three P2 issues: the old violet language selection remained, the sticky topbar sat above the task dialog, and horizontal overflow prevented reliable sticky behavior.
-2. Fixes applied: restyled language selection to mineral sage; lowered the topbar stacking layer below dialogs; changed the app canvas to `overflow-x: clip`; added wide-screen search placement in the top utility row.
-3. Post-fix evidence: clean in-app Browser Tab 3 showed the final Unfinished state with no overlapping controls, correct palette, working sticky navigation, and zero console issues.
+1. Initial supplied evidence identified one P1 and three P2 issue groups: page-level overflow hiding the focus footer (P1); search/Add collision, weak focus padding/readability, and timer/action collision (P2).
+2. Fixes applied: moved desktop search into a dedicated topbar flex slot; locked the desktop app shell to `100dvh`; made only the agenda scroll; changed the focus content to a height-aware flex layout with an auto-pushed footer; added desktop left padding and larger, brighter clamped description copy; widened and separated due/action grid tracks; increased countdown contrast and weight.
+3. Post-fix browser evidence at 1280 × 720 confirmed no page scroll, a fully visible footer, 48px focus inset, readable 16px description copy, and positive gaps between both reported collision pairs.
 
 ## Implementation Checklist
 
-- [x] Selected option 2 resolved to the second displayed ideation image.
-- [x] Real raster atmosphere created, inspected, and placed.
-- [x] Desktop focus-and-agenda composition implemented.
-- [x] Existing core TaskFlow behavior preserved.
-- [x] Responsive mobile navigation and compact controls retained.
-- [x] English and Thai verified.
-- [x] Typecheck, lint, tests, production build, interactions, and browser console verified.
+- [x] Search and Add button occupy separate topbar tracks.
+- [x] Focus content has a deliberate desktop left inset.
+- [x] Focus description is larger and higher contrast.
+- [x] Desktop body is fixed to one viewport; only the right agenda scrolls.
+- [x] Progress and complete controls remain fully visible at 100% zoom.
+- [x] Task countdown and edit/delete controls have separate grid space.
+- [x] Lint, typecheck, tests, build, and browser measurements passed.
 
 ## Follow-up Polish
 
-- Optional P3: reduce one navigation label at intermediate desktop widths if the product later adds more top-level views.
+- Optional P3: test the same layout against the user's longest real Thai task title after their browser reload; the current height-aware rules are designed for that state, but the local fixture uses shorter English task titles.
 
 final result: passed
