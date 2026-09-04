@@ -1,4 +1,29 @@
 export {
+  CourseRepositoryError,
+  type CourseRepository,
+  type CourseRepositoryErrorCode,
+  type CourseRepositoryListener,
+} from "./course-repository";
+export {
+  selectCourseRepository,
+  type CourseRepositorySelection,
+} from "./course-repository-selection";
+export {
+  COURSE_STORAGE_KEY,
+  LocalCourseRepository,
+  localCourseRepository,
+  type LocalCourseRepositoryOptions,
+} from "./local-course-repository";
+export { localWorkspaceMigrationSource } from "./local-workspace-migration";
+export {
+  createSessionCourseRepositorySelection,
+  type SessionCourseRepositorySelection,
+} from "./session-course-repository";
+export {
+  SupabaseCourseRepository,
+  type SupabaseCourseRepositoryOptions,
+} from "./supabase-course-repository";
+export {
   LocalTaskRepository,
   localTaskRepository,
   taskRepository,
@@ -32,3 +57,14 @@ export {
   type TaskRepositoryListener,
   type Unsubscribe,
 } from "./task-repository";
+export {
+  createCourseMigrationFingerprint,
+  createWorkspaceMigrationFingerprint,
+  migrateLocalWorkspaceToCloud,
+  readLocalWorkspaceMigrationData,
+  type CloudCourseMigrationTarget,
+  type CloudWorkspaceMigrationTarget,
+  type LocalWorkspaceMigrationSource,
+  type WorkspaceMigrationData,
+  type WorkspaceMigrationResult,
+} from "./workspace-migration";

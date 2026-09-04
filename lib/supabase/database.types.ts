@@ -13,6 +13,34 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      courses: {
+        Row: {
+          code: string | null;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          name: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          code?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          code?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       tasks: {
         Row: {
           category: string;
@@ -77,3 +105,6 @@ export type Database = {
 export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 export type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
+export type CourseRow = Database["public"]["Tables"]["courses"]["Row"];
+export type CourseInsert = Database["public"]["Tables"]["courses"]["Insert"];
+export type CourseUpdate = Database["public"]["Tables"]["courses"]["Update"];

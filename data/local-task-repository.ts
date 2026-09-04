@@ -198,6 +198,16 @@ export class LocalTaskRepository implements ResettableTaskRepository {
     this.notify([]);
   }
 
+  async replaceMigrationTasks(tasks: readonly Task[]): Promise<void> {
+    if (!this.writeTasks(tasks) && this.getStorage()) {
+      throw new TaskRepositoryError(
+        "storage_unavailable",
+        "Local tasks could not be restored.",
+      );
+    }
+    this.notify(tasks);
+  }
+
   async createTask(input: CreateTaskInput): Promise<Task> {
     const now = this.now().toISOString();
     const task: Task = {

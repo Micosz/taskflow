@@ -1,6 +1,7 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  BookOpen,
   Cloud,
   Database,
   Languages,
@@ -13,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { TaskStorageMode } from "@/data";
-import type { Locale, TranslationMessages } from "@/i18n";
+import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
 import { useDialogA11y } from "./use-dialog-a11y";
 
 interface SettingsDialogProps {
@@ -30,6 +31,8 @@ interface SettingsDialogProps {
   isSigningOut: boolean;
   onOpenAuth: () => void;
   onSignOut: () => Promise<void>;
+  onManageCourses: () => void;
+  courseCount: number;
   storageMode: TaskStorageMode;
   userEmail: string | null;
 }
@@ -48,6 +51,8 @@ export function SettingsDialog({
   isSigningOut,
   onOpenAuth,
   onSignOut,
+  onManageCourses,
+  courseCount,
   storageMode,
   userEmail,
 }: SettingsDialogProps) {
@@ -162,6 +167,31 @@ export function SettingsDialog({
                         {messages.auth.signIn}
                       </button>
                     )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-white/[0.075] bg-black/10 p-4 sm:p-5">
+                <div className="flex gap-3">
+                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200">
+                    <BookOpen aria-hidden="true" size={19} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-white">{messages.settings.coursesTitle}</h3>
+                      <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold text-[#b4b8cf]">
+                        {formatNumber(courseCount, locale)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-[#8f94b1]">{messages.settings.coursesDescription}</p>
+                    <button
+                      type="button"
+                      onClick={onManageCourses}
+                      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-violet-300/20 bg-violet-400/10 px-3.5 text-xs font-semibold text-violet-100 transition hover:bg-violet-400/15"
+                    >
+                      <BookOpen aria-hidden="true" size={15} />
+                      {messages.settings.manageCourses}
+                    </button>
                   </div>
                 </div>
               </section>

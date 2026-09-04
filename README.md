@@ -10,10 +10,13 @@ TaskFlow is a bilingual productivity web app for turning coursework, projects, a
 
 - Create, edit, delete, complete, and reopen tasks.
 - Track a title, notes, course or category, priority, due date, and optional due time.
+- Save reusable university courses with an optional code and name, then select them in task forms.
+- Use **Other…** for a one-off task category without adding it to Saved Courses.
 - Switch between Today, Upcoming, Overdue, Completed, and All Tasks views.
 - Search across task titles, notes, and categories, with live counts and progress summaries.
 - Keep tasks and language preferences across refreshes with `localStorage`; changes also propagate between tabs on the same origin.
 - Preserve local task data behind the versioned `taskflow:v1:tasks` key, including an automatic migration from the earlier V1 key.
+- Preserve guest Saved Courses under the independent versioned `taskflow:v1:courses` key.
 - Sign up, sign in, restore sessions, and sign out with Supabase Auth without making accounts mandatory.
 - Switch automatically between private guest storage and a user-scoped Supabase repository.
 - Explicitly move local tasks to the cloud with retry-safe duplicate protection and no silent deletion.
@@ -59,20 +62,21 @@ npm start
 
 ## Project architecture
 
-The interactive UI depends on a small `TaskRepository` contract rather than a storage vendor. Auth state selects the local or Supabase implementation; task components use the same CRUD and subscription interface in both modes.
+The interactive UI depends on small `TaskRepository` and `CourseRepository` contracts rather than a storage vendor. Auth state selects local or Supabase implementations; components use the same CRUD and subscription interfaces in both modes.
 
 ```text
 app/                    Route shell, metadata, global styles, and manifest
 components/taskflow/    Dashboard, navigation, task cards, forms, and dialogs
 features/tasks/         Task state hook, selectors, sorting, and validation
+features/courses/       Course state, task-option mapping, and scope isolation
 features/auth/          Supabase session lifecycle and localized auth errors
-data/                   Repository contract, local adapter, samples, Supabase adapter
+data/                   Task/course contracts, local adapters, migration, Supabase adapters
 i18n/                   Typed English/Thai messages and locale utilities
 lib/                    Date helpers and typed Supabase browser client
 public/icons/           Standard, maskable, and Apple application icons
 supabase/migrations/    PostgreSQL schema, RLS, migration idempotency, and Realtime
 tests/                  Filters, repository scopes, migration, persistence, and i18n tests
-types/                  Shared task domain types
+types/                  Shared task and course domain types
 ```
 
 The runtime flow is session-aware:
@@ -81,9 +85,23 @@ The runtime flow is session-aware:
 Signed out → TaskFlow UI → TaskRepository → LocalTaskRepository → localStorage
 Signed in  → TaskFlow UI → TaskRepository → SupabaseTaskRepository → PostgreSQL
                                                               ↕ private Realtime Broadcast
+
+Signed out → Course UI → CourseRepository → LocalCourseRepository → localStorage
+Signed in  → Course UI → CourseRepository → SupabaseCourseRepository → PostgreSQL
+                                                            ↕ private Realtime Broadcast
 ```
 
-Each repository receives a unique scope key (`local` or `cloud:<user-id>`). Changing scope immediately clears the visible task snapshot and ignores late responses from the previous scope, preventing one account's tasks from appearing for another.
+Each repository receives a unique scope key (`local` or `cloud:<user-id>`). Changing scope immediately clears visible task and course snapshots and ignores late responses from the previous scope, preventing one account's data from appearing for another.
+
+## Saved Courses data model
+
+Saved Courses are reusable presets, while `tasks.category` remains the authoritative text snapshot stored on each task. A course can contain a code, a name, or both; compact labels use `CODE — Name` when both are present. This preserves every existing task and keeps custom categories fully compatible.
+
+- Selecting a Saved Course copies its current display label into the task category.
+- Selecting **Other…** accepts arbitrary text for that task only and never creates a course.
+- Renaming a Saved Course changes future selections; existing tasks retain their original snapshot until the user explicitly edits and saves that task with the renamed course.
+- Deleting a Saved Course removes only the reusable preset. It never deletes, clears, or cascades to tasks.
+- Search continues to match the category snapshot, so codes such as `CS361` remain searchable.
 
 ## Language support
 
@@ -99,7 +117,7 @@ To prepare a Supabase project:
 
 1. Create a project and enable email/password authentication.
 2. Copy `.env.example` to `.env.local` and add the project URL plus a publishable key.
-3. Apply both files in `supabase/migrations/` in filename order. The second migration adds the idempotency key required for retry-safe local imports.
+3. Apply every file in `supabase/migrations/` in filename order. The second migration adds task-import idempotency; `202609040002_create_courses.sql` adds private Saved Courses storage and Realtime support.
 4. In Supabase Realtime settings, disable **Allow public access** so private channels must pass authorization.
 5. In Auth URL Configuration, add the local and deployed TaskFlow URLs to the allowed redirect URLs and set the production Site URL.
 6. Configure email confirmation according to the sign-up behavior you want.
@@ -124,8 +142,8 @@ For Vercel, add the same two public variables under **Project Settings → Envir
 
 ## Authentication and storage behavior
 
-- **Guest:** TaskFlow uses `LocalTaskRepository`; tasks remain in that browser's `localStorage`.
-- **Signed in:** TaskFlow uses `SupabaseTaskRepository`; RLS associates and returns only the authenticated user's rows.
+- **Guest:** TaskFlow uses `LocalTaskRepository` and `LocalCourseRepository`; tasks and Saved Courses remain in that browser's `localStorage`.
+- **Signed in:** TaskFlow uses the Supabase task and course repositories; RLS associates and returns only the authenticated user's rows.
 - **Session restore:** Supabase persists and refreshes the browser session. TaskFlow verifies the restored user before selecting cloud storage.
 - **Sign out/user change:** the current task snapshot is cleared before the next repository loads, and the previous Realtime subscription is removed.
 
@@ -133,15 +151,17 @@ To create a test account, use **Settings → Account → Sign in**, switch to **
 
 ## Local-to-cloud migration
 
-After sign-in, TaskFlow checks for actual local persisted tasks without creating new sample data. If tasks are found, it offers three explicit choices: move them to cloud, keep them on the device, or decide later.
+After sign-in, TaskFlow checks for actual local persisted tasks and Saved Courses. If either exists, one coherent dialog offers three explicit choices: move the local workspace to cloud, keep it on the device, or decide later.
 
-Migration performs one batch cloud upsert and verifies every source key before clearing local storage. The unique `(user_id, migration_key)` constraint makes retries idempotent. A failed cloud write or failed local clear leaves the local records available; TaskFlow never silently moves or deletes them.
+Migration imports and verifies both data sets before clearing local storage. Task retries use the unique `(user_id, migration_key)` constraint; courses use the case-insensitive `(user_id, dedupe_key)` constraint. If a cloud import fails, neither local source is cleared. If local clearing fails, TaskFlow restores both snapshots on a best-effort basis so the migration remains safely retryable.
+
+An identical course already present in the cloud is treated as safely migrated. If the same normalized code exists with different course details, migration stops and keeps the local workspace intact instead of silently overwriting either version.
 
 Choosing **Keep on this device** remembers the task-set fingerprint for that account. If local tasks later change, TaskFlow offers migration again.
 
 ## Realtime synchronization
 
-Authenticated repositories subscribe to one private Broadcast topic per user. INSERT, UPDATE, and DELETE events trigger a scoped task refetch, replacing the snapshot rather than appending events. This simple strategy handles optimistic local changes without duplicate cards and relies on RLS plus Realtime Authorization for isolation.
+Authenticated repositories subscribe to private task and course Broadcast topics per user. INSERT, UPDATE, and DELETE events trigger a scoped refetch, replacing the relevant snapshot rather than appending events. This simple strategy prevents duplicate cards/options and relies on RLS plus Realtime Authorization for isolation.
 
 To test sync, run the deployed app or local app in two independent browser profiles, sign into the same account in both, then create, complete, edit, and delete tasks in either session. Each change should appear in the other session without refreshing. Private Realtime channels require **Allow public access** to be disabled in Supabase Realtime settings.
 
@@ -156,6 +176,9 @@ The checked-in migration creates:
 - A trigger that emits inserts, updates, and deletes through a private per-user Realtime Broadcast topic.
 - A `realtime.messages` policy that authorizes a user only for the topic matching `auth.uid()`.
 - A nullable migration key with a per-user unique constraint for duplicate-safe local imports.
+- A multi-user `courses` table whose code and name are independent from historical task snapshots.
+- A generated case-insensitive course dedupe key and owner-scoped uniqueness constraint.
+- Course CRUD RLS policies, an owner/update index, timestamp trigger, and private per-user Realtime broadcasts.
 
 Apply the migration either in the Supabase SQL Editor or with the Supabase CLI after linking the project:
 
@@ -164,7 +187,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
 ```
 
-The generated-style TypeScript database contract is in `lib/supabase/database.types.ts`. Regenerate it after future schema changes. Normal task creation omits `user_id` and lets PostgreSQL default it from `auth.uid()`; migration ownership also remains protected by the INSERT `WITH CHECK` policy.
+The generated-style TypeScript database contract is in `lib/supabase/database.types.ts`. Regenerate it after future schema changes. Normal task and course creation omit `user_id` and let PostgreSQL default it from `auth.uid()`; migration ownership also remains protected by each INSERT `WITH CHECK` policy.
 
 ## PWA / iPhone usage
 
@@ -176,7 +199,7 @@ There is currently no service worker, offline asset cache, background sync, or p
 
 ## V1 scope
 
-V1 includes the complete local task workflow, email/password accounts, session-aware cloud storage, explicit local migration, private realtime synchronization, realistic seeded data, filters, search, progress summaries, English/Thai switching, responsive layouts, accessible interaction patterns, animation, local persistence, and PWA metadata.
+V1 includes the complete local task workflow, reusable Saved Courses, email/password accounts, session-aware cloud storage, explicit local migration, private realtime synchronization, realistic seeded data, filters, search, progress summaries, English/Thai switching, responsive layouts, accessible interaction patterns, animation, local persistence, and PWA metadata.
 
 Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, calendar integrations, analytics, AI features, push notifications, and guaranteed offline loading remain out of scope.
 
@@ -193,3 +216,4 @@ Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, ca
 - Realtime uses a full scoped refetch per database event, favoring correctness and simplicity over maximum efficiency.
 - Email delivery and confirmation behavior depend on the Supabase Auth settings and SMTP limits of the project.
 - The new `202609040001_add_task_migration_key.sql` migration must be applied before local-to-cloud migration can succeed.
+- The new `202609040002_create_courses.sql` migration must be applied before cloud Saved Courses, course migration, or course Realtime can work.

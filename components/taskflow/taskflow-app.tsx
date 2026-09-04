@@ -13,14 +13,17 @@ import {
   type Locale,
 } from "@/i18n";
 import {
-  createTaskMigrationFingerprint,
+  createSessionCourseRepositorySelection,
+  createWorkspaceMigrationFingerprint,
   createSessionTaskRepositorySelection,
   isTaskMigrationDismissed,
-  localTaskRepository,
-  migrateLocalTasksToCloud,
+  localWorkspaceMigrationSource,
+  migrateLocalWorkspaceToCloud,
   persistTaskMigrationDismissal,
+  readLocalWorkspaceMigrationData,
 } from "@/data";
 import { useAuthSession } from "@/features/auth/use-auth-session";
+import { useCourseManager } from "@/features/courses/use-course-manager";
 import {
   getNextActiveTask,
   getTaskStats,
@@ -31,6 +34,7 @@ import { useTaskManager } from "@/features/tasks/use-task-manager";
 import type { CreateTaskInput, Task, TaskView } from "@/types/task";
 import { DashboardHeader } from "./dashboard-header";
 import { AuthDialog } from "./auth-dialog";
+import { CourseManagementDialog } from "./course-management-dialog";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { MobileNavigation } from "./mobile-navigation";
@@ -51,10 +55,19 @@ export function TaskFlowApp() {
     () => createSessionTaskRepositorySelection(authenticatedUserId, auth.client),
     [auth.client, authenticatedUserId],
   );
+  const courseRepositorySelection = useMemo(
+    () => createSessionCourseRepositorySelection(authenticatedUserId, auth.client),
+    [auth.client, authenticatedUserId],
+  );
   const taskManager = useTaskManager({
     enabled: auth.isInitialized,
     repository: repositorySelection.repository,
     scopeKey: repositorySelection.scopeKey,
+  });
+  const courseManager = useCourseManager({
+    enabled: auth.isInitialized,
+    repository: courseRepositorySelection.repository,
+    scopeKey: courseRepositorySelection.scopeKey,
   });
   const [locale, setLocale] = useState<Locale>("en");
   const [now, setNow] = useState<Date | null>(null);
@@ -65,10 +78,13 @@ export function TaskFlowApp() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [courseManagerOpen, setCourseManagerOpen] = useState(false);
+  const [courseManagerReturnToForm, setCourseManagerReturnToForm] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [migrationOffer, setMigrationOffer] = useState<{
-    count: number;
+    taskCount: number;
+    courseCount: number;
     fingerprint: string;
     userId: string;
   } | null>(null);
@@ -92,11 +108,16 @@ export function TaskFlowApp() {
     checkedMigrationUserRef.current = userId;
 
     let active = true;
-    void localTaskRepository.getMigrationTasks().then((tasks) => {
-      if (!active || tasks.length === 0) return;
-      const fingerprint = createTaskMigrationFingerprint(tasks);
+    void readLocalWorkspaceMigrationData(localWorkspaceMigrationSource).then((data) => {
+      if (!active || (data.tasks.length === 0 && data.courses.length === 0)) return;
+      const fingerprint = createWorkspaceMigrationFingerprint(data);
       if (!isTaskMigrationDismissed(userId, fingerprint)) {
-        setMigrationOffer({ count: tasks.length, fingerprint, userId });
+        setMigrationOffer({
+          taskCount: data.tasks.length,
+          courseCount: data.courses.length,
+          fingerprint,
+          userId,
+        });
       }
     });
 
@@ -139,11 +160,6 @@ export function TaskFlowApp() {
     [referenceDate, searchQuery, taskManager.tasks, view],
   );
   const nextTask = useMemo(() => getNextActiveTask(taskManager.tasks), [taskManager.tasks]);
-  const categories = useMemo(
-    () => [...new Set(taskManager.tasks.map((task) => task.category))].sort(),
-    [taskManager.tasks],
-  );
-
   const dismissToast = useCallback(() => setToast(null), []);
   const showToast = useCallback(
     (title: string, description: string, tone: ToastMessage["tone"] = "success") => {
@@ -176,6 +192,24 @@ export function TaskFlowApp() {
     setSettingsOpen(false);
     setAuthOpen(true);
   }, [auth.configured]);
+
+  const openCourseManagerFromSettings = useCallback(() => {
+    setSettingsOpen(false);
+    setCourseManagerReturnToForm(false);
+    setCourseManagerOpen(true);
+  }, []);
+
+  const openCourseManagerFromForm = useCallback(() => {
+    setFormOpen(false);
+    setCourseManagerReturnToForm(true);
+    setCourseManagerOpen(true);
+  }, []);
+
+  const closeCourseManager = useCallback(() => {
+    setCourseManagerOpen(false);
+    if (courseManagerReturnToForm) setFormOpen(true);
+    setCourseManagerReturnToForm(false);
+  }, [courseManagerReturnToForm]);
 
   const handleSave = async (input: CreateTaskInput) => {
     try {
@@ -235,6 +269,7 @@ export function TaskFlowApp() {
     setEditingTask(null);
     setDeleteTarget(null);
     setMigrationOffer(null);
+    setCourseManagerOpen(false);
     try {
       await auth.signOut();
       setSettingsOpen(false);
@@ -249,23 +284,29 @@ export function TaskFlowApp() {
     if (
       !migrationOffer ||
       repositorySelection.mode !== "cloud" ||
-      !repositorySelection.migrationTarget
+      !repositorySelection.migrationTarget ||
+      courseRepositorySelection.mode !== "cloud" ||
+      !courseRepositorySelection.migrationTarget
     ) {
       return;
     }
 
     setIsMigrating(true);
     try {
-      const result = await migrateLocalTasksToCloud(
-        localTaskRepository,
-        repositorySelection.migrationTarget,
+      const result = await migrateLocalWorkspaceToCloud(
+        localWorkspaceMigrationSource,
+        {
+          tasks: repositorySelection.migrationTarget,
+          courses: courseRepositorySelection.migrationTarget,
+        },
       );
       setMigrationOffer(null);
-      await taskManager.loadTasks();
+      await Promise.all([taskManager.loadTasks(), courseManager.loadCourses()]);
       showToast(
         messages.migration.success,
         interpolate(messages.migration.successDescription, {
-          count: formatNumber(result.migratedCount, locale),
+          taskCount: formatNumber(result.taskCount, locale),
+          courseCount: formatNumber(result.courseCount, locale),
         }),
       );
     } catch {
@@ -484,9 +525,11 @@ export function TaskFlowApp() {
         key={`task-form-${formRevision}`}
         open={formOpen}
         task={editingTask}
-        categories={categories}
+        courses={courseManager.courses}
+        courseStatus={courseManager.status}
         messages={messages}
         onClose={closeForm}
+        onManageCourses={openCourseManagerFromForm}
         onSubmit={handleSave}
       />
       <DeleteTaskDialog
@@ -507,10 +550,25 @@ export function TaskFlowApp() {
         accountLabel={accountLabel}
         canReset={taskManager.canReset}
         isSigningOut={isSigningOut}
+        courseCount={courseManager.courses.length}
+        onManageCourses={openCourseManagerFromSettings}
         onOpenAuth={openAuth}
         onSignOut={handleSignOut}
         storageMode={repositorySelection.mode}
         userEmail={auth.user?.email ?? null}
+      />
+      <CourseManagementDialog
+        key={`course-manager-${courseRepositorySelection.scopeKey}`}
+        open={courseManagerOpen}
+        courses={courseManager.courses}
+        status={courseManager.status}
+        messages={messages}
+        onClose={closeCourseManager}
+        onCreate={courseManager.createCourse}
+        onUpdate={courseManager.updateCourse}
+        onDelete={courseManager.deleteCourse}
+        onRetry={courseManager.loadCourses}
+        onNotify={showToast}
       />
       <AuthDialog
         open={authOpen}
@@ -521,7 +579,8 @@ export function TaskFlowApp() {
       />
       <LocalTaskMigrationDialog
         open={migrationOpen}
-        count={migrationOffer?.count ?? 0}
+        taskCount={migrationOffer?.taskCount ?? 0}
+        courseCount={migrationOffer?.courseCount ?? 0}
         isMigrating={isMigrating}
         locale={locale}
         messages={messages}

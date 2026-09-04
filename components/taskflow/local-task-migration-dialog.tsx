@@ -7,7 +7,8 @@ import { formatNumber, interpolate, type Locale, type TranslationMessages } from
 import { useDialogA11y } from "./use-dialog-a11y";
 
 interface LocalTaskMigrationDialogProps {
-  count: number;
+  taskCount: number;
+  courseCount: number;
   isMigrating: boolean;
   locale: Locale;
   messages: TranslationMessages;
@@ -18,7 +19,8 @@ interface LocalTaskMigrationDialogProps {
 }
 
 export function LocalTaskMigrationDialog({
-  count,
+  taskCount,
+  courseCount,
   isMigrating,
   locale,
   messages,
@@ -84,7 +86,8 @@ export function LocalTaskMigrationDialog({
                 </h2>
                 <p id={descriptionId} className="mt-2 text-sm leading-6 text-[#989db8]">
                   {interpolate(messages.migration.description, {
-                    count: formatNumber(count, locale),
+                    taskCount: formatNumber(taskCount, locale),
+                    courseCount: formatNumber(courseCount, locale),
                   })}
                 </p>
               </div>

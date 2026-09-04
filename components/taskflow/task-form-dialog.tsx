@@ -11,15 +11,23 @@ import {
 } from "@/features/tasks/task-validation";
 import { toDateKey } from "@/lib/date";
 import { interpolate, type TranslationMessages } from "@/i18n";
+import {
+  findCourseForCategory,
+  OTHER_COURSE_OPTION,
+  resolveTaskCategory,
+} from "@/features/courses/course-options";
+import { getCourseDisplayLabel, type Course } from "@/types/course";
 import type { CreateTaskInput, Task, TaskPriority } from "@/types/task";
 import { useDialogA11y } from "./use-dialog-a11y";
 
 interface TaskFormDialogProps {
   open: boolean;
   task: Task | null;
-  categories: string[];
+  courses: readonly Course[];
+  courseStatus: "loading" | "ready" | "error";
   messages: TranslationMessages;
   onClose: () => void;
+  onManageCourses: () => void;
   onSubmit: (input: CreateTaskInput) => Promise<void>;
 }
 
@@ -48,17 +56,25 @@ function initialValues(task: Task | null): TaskFormValues {
 export function TaskFormDialog({
   open,
   task,
-  categories,
+  courses,
+  courseStatus,
   messages,
   onClose,
+  onManageCourses,
   onSubmit,
 }: TaskFormDialogProps) {
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  const categoryListId = useId();
   const [values, setValues] = useState<TaskFormValues>(() => initialValues(task));
+  const initialCourse = task ? findCourseForCategory(courses, task.category) : null;
+  const [selectedCourseId, setSelectedCourseId] = useState(
+    initialCourse?.id ?? (task || courses.length === 0 ? OTHER_COURSE_OPTION : ""),
+  );
+  const [customCategory, setCustomCategory] = useState(
+    initialCourse ? "" : task?.category ?? "",
+  );
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -88,17 +104,27 @@ export function TaskFormDialog({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextErrors = validateTaskForm(values);
+    const submittedValues = {
+      ...values,
+      category: resolveTaskCategory(
+        courses,
+        selectedCourseId,
+        customCategory,
+        values.category,
+      ),
+    };
+    const nextErrors = validateTaskForm(submittedValues);
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       const firstField = Object.keys(nextErrors)[0];
-      dialogRef.current?.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus();
+      const targetName = firstField === "category" ? "courseSelection" : firstField;
+      dialogRef.current?.querySelector<HTMLElement>(`[name="${targetName}"]`)?.focus();
       return;
     }
 
     setIsSaving(true);
     try {
-      await onSubmit(toCreateTaskInput(values));
+      await onSubmit(toCreateTaskInput(submittedValues));
     } finally {
       setIsSaving(false);
     }
@@ -205,29 +231,72 @@ export function TaskFormDialog({
                 </label>
 
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="block">
+                  <div className="block">
                     <span className="mb-2 block text-sm font-medium text-[#d9dbee]">
                       {messages.form.categoryLabel}
                     </span>
-                    <input
-                      name="category"
-                      list={categoryListId}
-                      value={values.category}
-                      maxLength={TASK_FORM_LIMITS.category + 1}
-                      onChange={(event) => updateField("category", event.target.value)}
-                      placeholder={messages.form.categoryPlaceholder}
+                    <select
+                      name="courseSelection"
+                      value={selectedCourseId}
+                      disabled={courseStatus === "loading"}
+                      onChange={(event) => {
+                        const nextId = event.target.value;
+                        setSelectedCourseId(nextId);
+                        updateField(
+                          "category",
+                          resolveTaskCategory(courses, nextId, customCategory),
+                        );
+                      }}
                       aria-invalid={Boolean(errors.category)}
                       aria-describedby={errors.category ? "category-error" : undefined}
                       className="form-field"
-                      autoComplete="off"
-                    />
-                    <datalist id={categoryListId}>
-                      {categories.map((category) => (
-                        <option key={category} value={category} />
+                    >
+                      {courseStatus === "loading" ? (
+                        <option value="">{messages.courses.loading}</option>
+                      ) : null}
+                      {courseStatus !== "loading" && courses.length === 0 ? (
+                        <option value="" disabled>{messages.courses.noSavedOption}</option>
+                      ) : null}
+                      {courses.length > 0 ? (
+                        <option value="" disabled>{messages.form.categoryPlaceholder}</option>
+                      ) : null}
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {getCourseDisplayLabel(course)}
+                        </option>
                       ))}
-                    </datalist>
+                      <option value={OTHER_COURSE_OPTION}>{messages.courses.other}</option>
+                    </select>
+                    {selectedCourseId === OTHER_COURSE_OPTION ? (
+                      <label className="mt-3 block">
+                        <span className="mb-2 block text-xs font-medium text-[#aeb2c9]">
+                          {messages.form.otherCategoryLabel}
+                        </span>
+                        <input
+                          name="category"
+                          value={customCategory}
+                          maxLength={TASK_FORM_LIMITS.category + 1}
+                          onChange={(event) => {
+                            setCustomCategory(event.target.value);
+                            updateField("category", event.target.value);
+                          }}
+                          placeholder={messages.form.otherCategoryPlaceholder}
+                          aria-invalid={Boolean(errors.category)}
+                          aria-describedby={errors.category ? "category-error" : undefined}
+                          className="form-field"
+                          autoComplete="off"
+                        />
+                      </label>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={onManageCourses}
+                      className="mt-2 min-h-10 text-xs font-semibold text-violet-200 transition hover:text-white"
+                    >
+                      {courses.length === 0 ? messages.courses.add : messages.form.manageCourses}
+                    </button>
                     {fieldError("category")}
-                  </label>
+                  </div>
 
                   <fieldset>
                     <legend className="mb-2 text-sm font-medium text-[#d9dbee]">
