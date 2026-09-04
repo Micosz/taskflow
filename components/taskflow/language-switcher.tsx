@@ -29,11 +29,11 @@ export function LanguageSwitcher({
   return (
     <div
       aria-label={messages.language.selectorLabel}
-      className={`inline-flex min-h-11 items-center rounded-2xl border border-white/[0.08] bg-white/[0.045] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl ${className}`}
+      className={`inline-flex min-h-11 items-center rounded-md border border-white/[0.08] bg-white/[0.025] p-1 ${className}`}
       role="group"
     >
       {!compact && (
-        <Languages aria-hidden="true" className="ml-2 mr-1 size-4 text-slate-400" strokeWidth={1.8} />
+        <Languages aria-hidden="true" className="ml-2 mr-1 size-4 text-[#858a84]" strokeWidth={1.6} />
       )}
 
       {localeOptions.map((option) => {
@@ -47,8 +47,8 @@ export function LanguageSwitcher({
             type="button"
             aria-label={fullLabel}
             aria-pressed={selected}
-            className={`relative isolate min-h-9 min-w-10 rounded-xl px-2.5 text-xs font-semibold tracking-[0.08em] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-cyan-300/90 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1020] motion-reduce:transition-none ${
-              selected ? "text-white" : "text-slate-400 hover:text-slate-100"
+            className={`relative isolate min-h-9 min-w-10 rounded px-2.5 text-xs font-medium tracking-[0.08em] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-[#a7b49c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b0a] motion-reduce:transition-none ${
+              selected ? "text-[#f1efe7]" : "text-[#747972] hover:text-[#d8d6cf]"
             }`}
             onClick={() => onLocaleChange(option)}
             whileHover={shouldReduceMotion ? undefined : { y: -1 }}
@@ -57,7 +57,7 @@ export function LanguageSwitcher({
             {selected && (
               <motion.span
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(139,92,246,0.88),rgba(79,70,229,0.76))] shadow-[0_7px_18px_rgba(99,102,241,0.28),inset_0_1px_0_rgba(255,255,255,0.2)]"
+                className="absolute inset-0 -z-10 rounded border border-[#b7c3ac]/18 bg-[#899781]/20"
                 layoutId={`taskflow-language-selection-${selectionId}`}
                 transition={
                   shouldReduceMotion

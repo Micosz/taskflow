@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Cloud, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import {
   applyDocumentLocale,
   formatNumber,
@@ -40,7 +40,7 @@ import { DeleteTaskDialog } from "./delete-task-dialog";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { MobileNavigation } from "./mobile-navigation";
 import { LocalTaskMigrationDialog } from "./local-task-migration-dialog";
-import { ProgressSummary } from "./progress-summary";
+import { FocusHero } from "./focus-hero";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
@@ -172,6 +172,10 @@ export function TaskFlowApp() {
     [detailTaskId, scopeIsCurrent, taskManager.tasks],
   );
   const nextTask = useMemo(() => getNextActiveTask(taskManager.tasks), [taskManager.tasks]);
+  const focusTask = useMemo(
+    () => visibleTasks.find((task) => !task.completed) ?? nextTask ?? visibleTasks[0] ?? null,
+    [nextTask, visibleTasks],
+  );
   const dismissToast = useCallback(() => setToast(null), []);
   const showToast = useCallback(
     (title: string, description: string, tone: ToastMessage["tone"] = "success") => {
@@ -436,10 +440,7 @@ export function TaskFlowApp() {
       >
         {messages.accessibility.skipToContent}
       </a>
-      <div aria-hidden="true" className="ambient-orb -right-44 top-[-8rem] bg-violet-600/15" />
-      <div aria-hidden="true" className="ambient-orb -bottom-44 -left-40 bg-cyan-500/[0.08] [animation-delay:-7s]" />
-
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1600px]">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-[1680px]">
         <Sidebar
           messages={messages}
           locale={locale}
@@ -463,7 +464,7 @@ export function TaskFlowApp() {
           id="main-content"
           aria-label={messages.accessibility.mainContent}
           tabIndex={-1}
-          className="app-main min-w-0 flex-1 pb-28 pt-5 sm:pt-7 lg:pb-12"
+          className="app-main min-w-0 pb-28 pt-5 sm:pt-7 lg:pb-10 lg:pt-0"
         >
           {now ? (
             <DashboardHeader
@@ -474,14 +475,13 @@ export function TaskFlowApp() {
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
               onLocaleChange={handleLocaleChange}
-              onAdd={openCreate}
               onSettings={() => setSettingsOpen(true)}
             />
           ) : (
             <div className="h-48" aria-hidden="true" />
           )}
 
-          <div className="mt-6">
+          <div className="mt-6 lg:hidden">
             <ViewSwitcher
               view={view}
               counts={counts}
@@ -516,65 +516,36 @@ export function TaskFlowApp() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -5 }}
                 transition={{ duration: reduceMotion ? 0 : 0.2 }}
-                className="mt-6"
+                className="editorial-workspace mt-6 lg:mt-0"
               >
-                <ProgressSummary
-                  messages={messages}
-                  locale={locale}
-                  stats={{
-                    completed: stats.completedToday,
-                    total: stats.completedToday + stats.dueToday,
-                    dueToday: stats.dueToday,
-                    overdue: stats.overdue,
-                    active: stats.active,
-                  }}
-                />
-
-                <div className="mt-7 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_17rem]">
-                  <TaskList
-                    tasks={visibleTasks}
-                    view={view}
-                    searchQuery={searchQuery}
+                {now && (
+                  <FocusHero
+                    task={focusTask}
+                    now={now}
                     locale={locale}
                     messages={messages}
-                    busyTaskId={busyTaskId}
+                    completed={stats.completedToday}
+                    total={stats.completedToday + stats.dueToday}
+                    busy={focusTask?.id === busyTaskId}
                     onOpen={openDetail}
                     onToggle={handleToggle}
-                    onEdit={openEdit}
-                    onDelete={openDelete}
-                    onAdd={openCreate}
-                    onClearSearch={() => handleSearchChange("")}
                   />
+                )}
 
-                  <aside className="hidden space-y-4 2xl:block">
-                    <div className="glass-panel rounded-[1.45rem] p-5">
-                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.13em] text-cyan-200/75">
-                        <Cloud aria-hidden="true" size={14} />
-                        {repositorySelection.mode === "cloud"
-                          ? messages.app.cloudMode
-                          : messages.app.localMode}
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-[#9aa0bb]">
-                        {repositorySelection.mode === "cloud"
-                          ? messages.app.cloudModeDescription
-                          : messages.app.localModeDescription}
-                      </p>
-                      <div className="mt-4 h-px bg-white/[0.07]" />
-                      <p className="mt-4 text-xs font-medium text-[#858ba8]">{messages.stats.focusProgress}</p>
-                      <p className="mt-2 text-sm font-semibold leading-6 text-white">
-                        {nextTask?.title ?? messages.empty.upcomingTitle}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSettingsOpen(true)}
-                      className="w-full rounded-[1.45rem] border border-violet-300/10 bg-gradient-to-br from-violet-400/[0.08] to-cyan-300/[0.035] p-5 text-left transition hover:border-violet-300/20 hover:from-violet-400/[0.11]"
-                    >
-                      <p className="text-sm font-semibold text-white">{messages.pwa.installTitle}</p>
-                      <p className="mt-2 text-xs leading-5 text-[#8f95b1]">{messages.pwa.installDescription}</p>
-                    </button>
-                  </aside>
-                </div>
+                <TaskList
+                  tasks={visibleTasks}
+                  view={view}
+                  searchQuery={searchQuery}
+                  locale={locale}
+                  messages={messages}
+                  busyTaskId={busyTaskId}
+                  onOpen={openDetail}
+                  onToggle={handleToggle}
+                  onEdit={openEdit}
+                  onDelete={openDelete}
+                  onAdd={openCreate}
+                  onClearSearch={() => handleSearchChange("")}
+                />
               </motion.div>
             </AnimatePresence>
           )}

@@ -23,6 +23,7 @@ interface TaskListProps {
   onDelete: (task: Task) => void;
   onAdd: () => void;
   onClearSearch: () => void;
+  className?: string;
 }
 
 export function TaskList({
@@ -38,6 +39,7 @@ export function TaskList({
   onDelete,
   onAdd,
   onClearSearch,
+  className = "",
 }: TaskListProps) {
   const reduceMotion = useReducedMotion();
   const searching = searchQuery.trim().length > 0;
@@ -46,18 +48,28 @@ export function TaskList({
       ? messages.search.resultCountOne
       : messages.search.resultCount.replace("{count}", formatNumber(tasks.length, locale))
     : formatTaskCount(tasks.length, locale);
+  const agendaLabels = locale === "th"
+    ? { now: "ตอนนี้", next: "ลำดับถัดไป", later: "ภายหลัง" }
+    : { now: "Now", next: "Next", later: "Later" };
+  const groups = view === "active" && !searching
+    ? [
+        { key: "now", label: agendaLabels.now, tasks: tasks.slice(0, 1) },
+        { key: "next", label: agendaLabels.next, tasks: tasks.slice(1, 3) },
+        { key: "later", label: agendaLabels.later, tasks: tasks.slice(3) },
+      ].filter((group) => group.tasks.length > 0)
+    : [{ key: view, label: searching ? messages.search.title : messages.view[view], tasks }];
 
   return (
-    <section id="task-list" aria-labelledby="task-list-heading" className="scroll-mt-6">
-      <div className="mb-4 flex items-end justify-between gap-4 px-1">
+    <section id="task-list" aria-labelledby="task-list-heading" className={`editorial-agenda scroll-mt-6 ${className}`}>
+      <div className="editorial-agenda__intro">
         <div>
           <div className="flex items-center gap-2">
-            {searching && <Search aria-hidden="true" size={15} className="text-violet-300" />}
-            <h2 id="task-list-heading" className="text-base font-semibold tracking-[-0.02em] text-white sm:text-lg">
+            {searching && <Search aria-hidden="true" size={15} className="text-[#9aaa91]" />}
+            <h2 id="task-list-heading" className="text-base font-normal tracking-[-0.02em] text-[#efede6] sm:text-lg">
               {searching ? messages.search.title : messages.view[view]}
             </h2>
           </div>
-          <p className="mt-1 text-xs text-[#777d9b]">{resultLabel}</p>
+          <p className="mt-1 text-xs text-[#6f746e]">{resultLabel}</p>
         </div>
       </div>
 
@@ -70,23 +82,33 @@ export function TaskList({
           onClearSearch={onClearSearch}
         />
       ) : (
-        <motion.ul layout={!reduceMotion} className="space-y-3">
-          <AnimatePresence initial={false} mode="popLayout">
-            {tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                locale={locale}
-                messages={messages}
-                busy={busyTaskId === task.id}
-                onOpen={onOpen}
-                onToggle={onToggle}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ))}
-          </AnimatePresence>
-        </motion.ul>
+        <div className="space-y-10">
+          {groups.map((group) => (
+            <section key={group.key} aria-labelledby={`agenda-${group.key}`}>
+              <div className="editorial-agenda__group-heading">
+                <h3 id={`agenda-${group.key}`}>{group.label}</h3>
+                <span>{formatTaskCount(group.tasks.length, locale)}</span>
+              </div>
+              <motion.ul layout={!reduceMotion} className="editorial-task-list">
+                <AnimatePresence initial={false} mode="popLayout">
+                  {group.tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      locale={locale}
+                      messages={messages}
+                      busy={busyTaskId === task.id}
+                      onOpen={onOpen}
+                      onToggle={onToggle}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            </section>
+          ))}
+        </div>
       )}
     </section>
   );

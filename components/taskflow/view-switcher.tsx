@@ -26,17 +26,17 @@ export function ViewSwitcher({ view, counts, locale, messages, onChange }: ViewS
               aria-current={active ? "page" : undefined}
               onClick={() => onChange(option)}
               whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-              className={`relative min-h-10 overflow-hidden rounded-full border px-3.5 text-xs font-semibold transition ${
+              className={`relative min-h-10 overflow-hidden rounded-full border px-3.5 text-xs font-medium transition ${
                 active
-                  ? "border-violet-300/20 bg-violet-400/15 text-violet-100"
+                  ? "border-[#a7b49c]/25 bg-[#9aaa91]/10 text-[#dfe5da]"
                   : alert
-                    ? "border-amber-300/15 bg-amber-300/[0.06] text-amber-200"
-                    : "border-white/[0.075] bg-white/[0.03] text-[#8c92ad] hover:bg-white/[0.055] hover:text-white"
+                    ? "border-[#ef654a]/20 bg-[#ef654a]/[0.06] text-[#ef806b]"
+                    : "border-white/[0.075] bg-white/[0.025] text-[#858a84] hover:bg-white/[0.05] hover:text-white"
               }`}
             >
               <span className="relative z-10">
                 {messages.navigation[option]}
-                <span className={`ml-2 tabular-nums ${active ? "text-violet-200/70" : "text-[#686e8c]"}`}>
+                <span className={`ml-2 tabular-nums ${active ? "text-[#b7c3ac]/70" : "text-[#666b65]"}`}>
                   {formatNumber(counts[option], locale)}
                 </span>
               </span>
