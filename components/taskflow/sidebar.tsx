@@ -14,6 +14,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 
 import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
+import type { TaskStorageMode } from "@/data";
 import type { TaskView } from "@/types/task";
 
 import { Brand } from "./brand";
@@ -42,6 +43,10 @@ export interface SidebarProps {
   onLocaleChange: (locale: Locale) => void;
   onAdd: () => void;
   onSettings: () => void;
+  onAccount: () => void;
+  accountDetail: string;
+  accountLabel: string;
+  storageMode: TaskStorageMode;
   className?: string;
 }
 
@@ -54,6 +59,10 @@ export function Sidebar({
   onLocaleChange,
   onAdd,
   onSettings,
+  onAccount,
+  accountDetail,
+  accountLabel,
+  storageMode,
   className = "",
 }: SidebarProps) {
   const shouldReduceMotion = useReducedMotion();
@@ -152,20 +161,31 @@ export function Sidebar({
       </nav>
 
       <div className="mt-auto space-y-3 pt-6">
-        <div className="rounded-2xl border border-cyan-300/[0.08] bg-cyan-300/[0.035] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <button
+          type="button"
+          aria-label={messages.auth.openAccount}
+          onClick={onAccount}
+          className="w-full rounded-2xl border border-cyan-300/[0.08] bg-cyan-300/[0.035] p-3.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-cyan-300/15 hover:bg-cyan-300/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80"
+        >
           <div className="flex items-center gap-2.5">
             <span className="relative grid size-8 shrink-0 place-items-center rounded-xl bg-cyan-300/[0.08] text-cyan-200">
               <Cloud aria-hidden="true" className="size-4" strokeWidth={1.8} />
-              <span className="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-emerald-300 shadow-[0_0_7px_rgba(110,231,183,0.9)]" />
+              <span
+                className={`absolute right-0.5 top-0.5 size-1.5 rounded-full ${
+                  storageMode === "cloud"
+                    ? "bg-emerald-300 shadow-[0_0_7px_rgba(110,231,183,0.9)]"
+                    : "bg-amber-300 shadow-[0_0_7px_rgba(252,211,77,0.65)]"
+                }`}
+              />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-slate-200">{messages.app.localMode}</p>
+              <p className="truncate text-xs font-medium text-slate-200">{accountLabel}</p>
               <p className="mt-0.5 truncate text-[0.66rem] text-slate-500">
-                {messages.app.syncReady}
+                {accountDetail}
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher

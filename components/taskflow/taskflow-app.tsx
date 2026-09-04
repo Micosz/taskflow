@@ -1,15 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Cloud, RotateCcw } from "lucide-react";
 import {
   applyDocumentLocale,
+  formatNumber,
   getTranslations,
+  interpolate,
   persistLocale,
   readStoredLocale,
   type Locale,
 } from "@/i18n";
+import {
+  createTaskMigrationFingerprint,
+  createSessionTaskRepositorySelection,
+  isTaskMigrationDismissed,
+  localTaskRepository,
+  migrateLocalTasksToCloud,
+  persistTaskMigrationDismissal,
+} from "@/data";
+import { useAuthSession } from "@/features/auth/use-auth-session";
 import {
   getNextActiveTask,
   getTaskStats,
@@ -19,9 +30,11 @@ import {
 import { useTaskManager } from "@/features/tasks/use-task-manager";
 import type { CreateTaskInput, Task, TaskView } from "@/types/task";
 import { DashboardHeader } from "./dashboard-header";
+import { AuthDialog } from "./auth-dialog";
 import { DeleteTaskDialog } from "./delete-task-dialog";
 import { LoadingSkeleton } from "./loading-skeleton";
 import { MobileNavigation } from "./mobile-navigation";
+import { LocalTaskMigrationDialog } from "./local-task-migration-dialog";
 import { ProgressSummary } from "./progress-summary";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
@@ -32,7 +45,17 @@ import { ViewSwitcher } from "./view-switcher";
 
 export function TaskFlowApp() {
   const reduceMotion = useReducedMotion();
-  const taskManager = useTaskManager();
+  const auth = useAuthSession();
+  const authenticatedUserId = auth.client && auth.user ? auth.user.id : null;
+  const repositorySelection = useMemo(
+    () => createSessionTaskRepositorySelection(authenticatedUserId, auth.client),
+    [auth.client, authenticatedUserId],
+  );
+  const taskManager = useTaskManager({
+    enabled: auth.isInitialized,
+    repository: repositorySelection.repository,
+    scopeKey: repositorySelection.scopeKey,
+  });
   const [locale, setLocale] = useState<Locale>("en");
   const [now, setNow] = useState<Date | null>(null);
   const [view, setView] = useState<TaskView>("today");
@@ -42,9 +65,45 @@ export function TaskFlowApp() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [migrationOffer, setMigrationOffer] = useState<{
+    count: number;
+    fingerprint: string;
+    userId: string;
+  } | null>(null);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const checkedMigrationUserRef = useRef<string | null>(null);
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const messages = getTranslations(locale);
+
+  useEffect(() => {
+    const userId = auth.user?.id ?? null;
+    if (
+      auth.status !== "signed_in" ||
+      !userId ||
+      repositorySelection.mode !== "cloud"
+    ) {
+      checkedMigrationUserRef.current = null;
+      return;
+    }
+    if (checkedMigrationUserRef.current === userId) return;
+    checkedMigrationUserRef.current = userId;
+
+    let active = true;
+    void localTaskRepository.getMigrationTasks().then((tasks) => {
+      if (!active || tasks.length === 0) return;
+      const fingerprint = createTaskMigrationFingerprint(tasks);
+      if (!isTaskMigrationDismissed(userId, fingerprint)) {
+        setMigrationOffer({ count: tasks.length, fingerprint, userId });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [auth.status, auth.user?.id, repositorySelection.mode]);
 
   useEffect(() => {
     const storedLocale = readStoredLocale();
@@ -112,6 +171,11 @@ export function TaskFlowApp() {
 
   const closeDeleteDialog = useCallback(() => setDeleteTarget(null), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const openAuth = useCallback(() => {
+    if (!auth.configured) return;
+    setSettingsOpen(false);
+    setAuthOpen(true);
+  }, [auth.configured]);
 
   const handleSave = async (input: CreateTaskInput) => {
     try {
@@ -164,6 +228,67 @@ export function TaskFlowApp() {
     }
   };
 
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    setFormOpen(false);
+    setEditingTask(null);
+    setDeleteTarget(null);
+    setMigrationOffer(null);
+    try {
+      await auth.signOut();
+      setSettingsOpen(false);
+    } catch {
+      showToast(messages.toast.error, messages.auth.genericError, "error");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const handleMigrate = async () => {
+    if (
+      !migrationOffer ||
+      repositorySelection.mode !== "cloud" ||
+      !repositorySelection.migrationTarget
+    ) {
+      return;
+    }
+
+    setIsMigrating(true);
+    try {
+      const result = await migrateLocalTasksToCloud(
+        localTaskRepository,
+        repositorySelection.migrationTarget,
+      );
+      setMigrationOffer(null);
+      await taskManager.loadTasks();
+      showToast(
+        messages.migration.success,
+        interpolate(messages.migration.successDescription, {
+          count: formatNumber(result.migratedCount, locale),
+        }),
+      );
+    } catch {
+      showToast(
+        messages.migration.failure,
+        messages.migration.failureDescription,
+        "error",
+      );
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
+  const handleKeepLocal = () => {
+    if (migrationOffer) {
+      persistTaskMigrationDismissal(
+        migrationOffer.userId,
+        migrationOffer.fingerprint,
+      );
+    }
+    setMigrationOffer(null);
+  };
+
   const handleViewChange = useCallback((nextView: TaskView) => {
     setView(nextView);
     window.requestAnimationFrame(() => {
@@ -173,7 +298,26 @@ export function TaskFlowApp() {
     });
   }, [reduceMotion]);
 
-  const isReady = taskManager.status === "ready" && now !== null;
+  const isReady =
+    auth.isInitialized && taskManager.status === "ready" && now !== null;
+  const accountLabel =
+    auth.status === "loading"
+      ? messages.auth.initializing
+      : repositorySelection.mode === "cloud"
+        ? messages.auth.signedIn
+        : messages.auth.guestMode;
+  const accountDetail =
+    auth.status === "error"
+      ? messages.auth.sessionError
+      : repositorySelection.mode === "cloud"
+      ? auth.user?.email ?? messages.app.cloudModeDescription
+      : auth.configured
+        ? messages.auth.guestDescription
+        : messages.auth.unavailable;
+  const migrationOpen =
+    migrationOffer !== null &&
+    auth.status === "signed_in" &&
+    migrationOffer.userId === auth.user?.id;
 
   return (
     <div className="app-canvas">
@@ -196,6 +340,14 @@ export function TaskFlowApp() {
           onLocaleChange={handleLocaleChange}
           onAdd={openCreate}
           onSettings={() => setSettingsOpen(true)}
+          onAccount={() =>
+            repositorySelection.mode === "cloud"
+              ? setSettingsOpen(true)
+              : openAuth()
+          }
+          accountDetail={accountDetail}
+          accountLabel={accountLabel}
+          storageMode={repositorySelection.mode}
         />
 
         <main
@@ -288,10 +440,14 @@ export function TaskFlowApp() {
                     <div className="glass-panel rounded-[1.45rem] p-5">
                       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.13em] text-cyan-200/75">
                         <Cloud aria-hidden="true" size={14} />
-                        {messages.app.localMode}
+                        {repositorySelection.mode === "cloud"
+                          ? messages.app.cloudMode
+                          : messages.app.localMode}
                       </div>
                       <p className="mt-3 text-sm leading-6 text-[#9aa0bb]">
-                        {messages.app.localModeDescription}
+                        {repositorySelection.mode === "cloud"
+                          ? messages.app.cloudModeDescription
+                          : messages.app.localModeDescription}
                       </p>
                       <div className="mt-4 h-px bg-white/[0.07]" />
                       <p className="mt-4 text-xs font-medium text-[#858ba8]">{messages.stats.focusProgress}</p>
@@ -346,6 +502,32 @@ export function TaskFlowApp() {
         onLocaleChange={handleLocaleChange}
         onReset={handleReset}
         onClose={closeSettings}
+        authConfigured={auth.configured}
+        accountDetail={accountDetail}
+        accountLabel={accountLabel}
+        canReset={taskManager.canReset}
+        isSigningOut={isSigningOut}
+        onOpenAuth={openAuth}
+        onSignOut={handleSignOut}
+        storageMode={repositorySelection.mode}
+        userEmail={auth.user?.email ?? null}
+      />
+      <AuthDialog
+        open={authOpen}
+        messages={messages}
+        onClose={() => setAuthOpen(false)}
+        onSignIn={auth.signIn}
+        onSignUp={auth.signUp}
+      />
+      <LocalTaskMigrationDialog
+        open={migrationOpen}
+        count={migrationOffer?.count ?? 0}
+        isMigrating={isMigrating}
+        locale={locale}
+        messages={messages}
+        onKeepLocal={handleKeepLocal}
+        onLater={() => setMigrationOffer(null)}
+        onMigrate={handleMigrate}
       />
       <Toast toast={toast} messages={messages} onDismiss={dismissToast} />
     </div>

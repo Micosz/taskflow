@@ -1,6 +1,18 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Cloud, Database, Languages, RefreshCcw, Share, ShieldCheck, X } from "lucide-react";
+import {
+  Cloud,
+  Database,
+  Languages,
+  LogIn,
+  LogOut,
+  RefreshCcw,
+  Share,
+  ShieldCheck,
+  UserRound,
+  X,
+} from "lucide-react";
+import type { TaskStorageMode } from "@/data";
 import type { Locale, TranslationMessages } from "@/i18n";
 import { useDialogA11y } from "./use-dialog-a11y";
 
@@ -11,6 +23,15 @@ interface SettingsDialogProps {
   onLocaleChange: (locale: Locale) => void;
   onReset: () => Promise<void>;
   onClose: () => void;
+  authConfigured: boolean;
+  accountDetail: string;
+  accountLabel: string;
+  canReset: boolean;
+  isSigningOut: boolean;
+  onOpenAuth: () => void;
+  onSignOut: () => Promise<void>;
+  storageMode: TaskStorageMode;
+  userEmail: string | null;
 }
 
 export function SettingsDialog({
@@ -20,6 +41,15 @@ export function SettingsDialog({
   onLocaleChange,
   onReset,
   onClose,
+  authConfigured,
+  accountDetail,
+  accountLabel,
+  canReset,
+  isSigningOut,
+  onOpenAuth,
+  onSignOut,
+  storageMode,
+  userEmail,
 }: SettingsDialogProps) {
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -100,6 +130,44 @@ export function SettingsDialog({
             <div className="mt-6 space-y-3.5">
               <section className="rounded-2xl border border-white/[0.075] bg-black/10 p-4 sm:p-5">
                 <div className="flex gap-3">
+                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-cyan-200">
+                    <UserRound aria-hidden="true" size={19} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-white">{messages.auth.accountTitle}</h3>
+                    <p className="mt-1 text-xs font-semibold text-[#d9dbea]">{accountLabel}</p>
+                    <p className="mt-1 break-all text-xs leading-5 text-[#8f94b1]">
+                      {storageMode === "cloud"
+                        ? userEmail ?? messages.auth.signedIn
+                        : accountDetail}
+                    </p>
+                    {storageMode === "cloud" ? (
+                      <button
+                        type="button"
+                        disabled={isSigningOut}
+                        onClick={() => void onSignOut()}
+                        className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-300/15 bg-rose-400/[0.06] px-3.5 text-xs font-semibold text-rose-100 transition hover:bg-rose-400/[0.1] disabled:cursor-wait disabled:opacity-55"
+                      >
+                        <LogOut aria-hidden="true" size={15} />
+                        {isSigningOut ? messages.auth.signingOut : messages.auth.signOut}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!authConfigured}
+                        onClick={onOpenAuth}
+                        className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-violet-300/20 bg-violet-400/10 px-3.5 text-xs font-semibold text-violet-100 transition hover:bg-violet-400/15 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        <LogIn aria-hidden="true" size={15} />
+                        {messages.auth.signIn}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-white/[0.075] bg-black/10 p-4 sm:p-5">
+                <div className="flex gap-3">
                   <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-400/12 text-violet-200">
                     <Languages aria-hidden="true" size={19} />
                   </div>
@@ -134,28 +202,34 @@ export function SettingsDialog({
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-semibold text-white">{messages.settings.dataTitle}</h3>
-                    <p className="mt-1 text-xs leading-5 text-[#8f94b1]">{messages.settings.dataDescription}</p>
-                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-rose-300/10 bg-rose-400/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-[#d8daea]">{messages.settings.resetTitle}</p>
-                        <p className="mt-1 text-[11px] leading-4 text-[#858ba8]">
-                          {confirmReset ? messages.settings.resetWarning : messages.settings.resetDescription}
-                        </p>
+                    <p className="mt-1 text-xs leading-5 text-[#8f94b1]">
+                      {storageMode === "cloud"
+                        ? messages.settings.cloudDataDescription
+                        : messages.settings.dataDescription}
+                    </p>
+                    {canReset ? (
+                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-rose-300/10 bg-rose-400/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-[#d8daea]">{messages.settings.resetTitle}</p>
+                          <p className="mt-1 text-[11px] leading-4 text-[#858ba8]">
+                            {confirmReset ? messages.settings.resetWarning : messages.settings.resetDescription}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isResetting}
+                          onClick={handleReset}
+                          className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition active:scale-[0.98] ${
+                            confirmReset
+                              ? "border-rose-300/25 bg-rose-400/15 text-rose-100"
+                              : "border-white/[0.08] bg-white/[0.035] text-[#b5b9cf] hover:bg-white/[0.07] hover:text-white"
+                          }`}
+                        >
+                          <RefreshCcw aria-hidden="true" size={14} />
+                          {confirmReset ? messages.settings.resetConfirm : messages.settings.resetAction}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        disabled={isResetting}
-                        onClick={handleReset}
-                        className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition active:scale-[0.98] ${
-                          confirmReset
-                            ? "border-rose-300/25 bg-rose-400/15 text-rose-100"
-                            : "border-white/[0.08] bg-white/[0.035] text-[#b5b9cf] hover:bg-white/[0.07] hover:text-white"
-                        }`}
-                      >
-                        <RefreshCcw aria-hidden="true" size={14} />
-                        {confirmReset ? messages.settings.resetConfirm : messages.settings.resetAction}
-                      </button>
-                    </div>
+                    ) : null}
                   </div>
                 </div>
               </section>
@@ -169,10 +243,16 @@ export function SettingsDialog({
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold text-white">{messages.settings.syncTitle}</h3>
                       <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-200 ring-1 ring-inset ring-emerald-300/15">
-                        {messages.settings.syncStatus}
+                        {storageMode === "cloud"
+                          ? messages.settings.syncActiveStatus
+                          : messages.settings.syncStatus}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-[#8f94b1]">{messages.settings.syncDescription}</p>
+                    <p className="mt-1 text-xs leading-5 text-[#8f94b1]">
+                      {storageMode === "cloud"
+                        ? messages.settings.syncActiveDescription
+                        : messages.settings.syncDescription}
+                    </p>
                     <div className="mt-3 inline-flex items-center gap-2 text-[11px] font-medium text-[#747a99]">
                       <ShieldCheck aria-hidden="true" size={14} className="text-emerald-300/70" />
                       {messages.app.syncReady}

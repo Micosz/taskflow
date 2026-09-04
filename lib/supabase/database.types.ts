@@ -22,6 +22,7 @@ export type Database = {
           due_date: string;
           due_time: string | null;
           id: string;
+          migration_key: string | null;
           priority: Database["public"]["Enums"]["task_priority"];
           title: string;
           updated_at: string;
@@ -35,6 +36,7 @@ export type Database = {
           due_date: string;
           due_time?: string | null;
           id?: string;
+          migration_key?: string | null;
           priority?: Database["public"]["Enums"]["task_priority"];
           title: string;
           updated_at?: string;
@@ -48,6 +50,7 @@ export type Database = {
           due_date?: string;
           due_time?: string | null;
           id?: string;
+          migration_key?: string | null;
           priority?: Database["public"]["Enums"]["task_priority"];
           title?: string;
           updated_at?: string;

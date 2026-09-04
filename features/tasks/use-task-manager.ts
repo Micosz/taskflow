@@ -1,97 +1,136 @@
-import { useCallback, useEffect, useState } from "react";
-import { taskRepository } from "@/data";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+
+import type {
+  ResettableTaskRepository,
+  TaskRepository,
+} from "@/data/task-repository";
 import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
 
-export type TaskLoadStatus = "loading" | "ready" | "error";
+import {
+  createTaskManagerState,
+  reduceTaskManagerState,
+} from "./task-manager-state";
 
-export function useTaskManager() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [status, setStatus] = useState<TaskLoadStatus>("loading");
+function isResettableRepository(
+  repository: TaskRepository,
+): repository is ResettableTaskRepository {
+  return "resetToSampleTasks" in repository;
+}
+
+export interface UseTaskManagerOptions {
+  enabled?: boolean;
+  repository: TaskRepository;
+  scopeKey: string;
+}
+
+export function useTaskManager({
+  enabled = true,
+  repository,
+  scopeKey,
+}: UseTaskManagerOptions) {
+  const [state, dispatch] = useReducer(
+    reduceTaskManagerState,
+    createTaskManagerState(scopeKey),
+  );
+
+  const visibleState = useMemo(
+    () =>
+      state.scopeKey === scopeKey
+        ? state
+        : createTaskManagerState(scopeKey),
+    [scopeKey, state],
+  );
 
   const loadTasks = useCallback(async () => {
-    setStatus("loading");
+    if (!enabled) return;
+    dispatch({ type: "loading", scopeKey });
     try {
-      setTasks(await taskRepository.getTasks());
-      setStatus("ready");
+      const tasks = await repository.getTasks();
+      dispatch({ type: "loaded", scopeKey, tasks });
     } catch {
-      setStatus("error");
+      dispatch({ type: "failed", scopeKey });
     }
-  }, []);
+  }, [enabled, repository, scopeKey]);
 
   useEffect(() => {
+    dispatch({ type: "switch_scope", scopeKey });
+    if (!enabled) return;
+
     let active = true;
-    const unsubscribe = taskRepository.subscribe((nextTasks) => {
-      if (!active) return;
-      setTasks([...nextTasks]);
-      setStatus("ready");
+    const unsubscribe = repository.subscribe((tasks) => {
+      if (active) dispatch({ type: "loaded", scopeKey, tasks });
     });
 
-    taskRepository
+    void repository
       .getTasks()
-      .then((nextTasks) => {
-        if (!active) return;
-        setTasks(nextTasks);
-        setStatus("ready");
+      .then((tasks) => {
+        if (active) dispatch({ type: "loaded", scopeKey, tasks });
       })
       .catch(() => {
-        if (active) setStatus("error");
+        if (active) dispatch({ type: "failed", scopeKey });
       });
 
     return () => {
       active = false;
       unsubscribe();
     };
-  }, []);
+  }, [enabled, repository, scopeKey]);
 
-  const createTask = useCallback(async (input: CreateTaskInput) => {
-    const created = await taskRepository.createTask(input);
-    setTasks((current) =>
-      current.some((task) => task.id === created.id)
-        ? current.map((task) => (task.id === created.id ? created : task))
-        : [created, ...current],
-    );
-    return created;
-  }, []);
+  const createTask = useCallback(
+    async (input: CreateTaskInput) => {
+      const task = await repository.createTask(input);
+      dispatch({ type: "upserted", scopeKey, task });
+      return task;
+    },
+    [repository, scopeKey],
+  );
 
-  const updateTask = useCallback(async (id: string, input: UpdateTaskInput) => {
-    const updated = await taskRepository.updateTask(id, input);
-    setTasks((current) =>
-      current.map((task) => (task.id === updated.id ? updated : task)),
-    );
-    return updated;
-  }, []);
+  const updateTask = useCallback(
+    async (id: string, input: UpdateTaskInput) => {
+      const task = await repository.updateTask(id, input);
+      dispatch({ type: "upserted", scopeKey, task, prepend: false });
+      return task;
+    },
+    [repository, scopeKey],
+  );
 
-  const deleteTask = useCallback(async (id: string) => {
-    await taskRepository.deleteTask(id);
-    setTasks((current) => current.filter((task) => task.id !== id));
-  }, []);
+  const deleteTask = useCallback(
+    async (id: string) => {
+      await repository.deleteTask(id);
+      dispatch({ type: "deleted", scopeKey, taskId: id });
+    },
+    [repository, scopeKey],
+  );
 
-  const toggleTask = useCallback(async (task: Task) => {
-    const updated = await taskRepository.updateTask(task.id, {
-      completed: !task.completed,
-    });
-    setTasks((current) =>
-      current.map((candidate) =>
-        candidate.id === updated.id ? updated : candidate,
-      ),
-    );
-    return updated;
-  }, []);
+  const toggleTask = useCallback(
+    async (task: Task) => {
+      const updated = await repository.updateTask(task.id, {
+        completed: !task.completed,
+      });
+      dispatch({ type: "upserted", scopeKey, task: updated, prepend: false });
+      return updated;
+    },
+    [repository, scopeKey],
+  );
 
   const resetTasks = useCallback(async () => {
-    const samples = await taskRepository.resetToSampleTasks();
-    setTasks(samples);
-    return samples;
-  }, []);
+    if (!isResettableRepository(repository)) {
+      throw new Error("This repository does not support sample task resets.");
+    }
+    const tasks = await repository.resetToSampleTasks();
+    dispatch({ type: "loaded", scopeKey, tasks });
+    return tasks;
+  }, [repository, scopeKey]);
 
   return {
-    tasks,
-    status,
-    loadTasks,
+    canReset: isResettableRepository(repository),
     createTask,
-    updateTask,
     deleteTask,
-    toggleTask,
+    loadTasks,
     resetTasks,
+    status: visibleState.status,
+    tasks: visibleState.tasks,
+    toggleTask,
+    updateTask,
   };
 }

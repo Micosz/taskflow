@@ -108,6 +108,21 @@ function createPayload(input: CreateTaskInput): TaskInsert {
   };
 }
 
+function createMigrationPayload(task: Task): TaskInsert {
+  return {
+    migration_key: `local-v1:${task.id}`,
+    title: requireText(task.title, "title"),
+    description: task.description.trim() || null,
+    category: requireText(task.category, "category"),
+    priority: requirePriority(task.priority),
+    due_date: requireDate(task.dueDate),
+    due_time: normalizeTime(task.dueTime),
+    completed: task.completed,
+    created_at: task.createdAt,
+    updated_at: task.updatedAt,
+  };
+}
+
 function updatePayload(input: UpdateTaskInput): TaskUpdate {
   const payload: TaskUpdate = {};
 
@@ -268,6 +283,38 @@ export class SupabaseTaskRepository implements TaskRepository {
         `Task with id "${id}" was not found.`,
       );
     }
+  }
+
+  async importTasks(tasks: readonly Task[]): Promise<Task[]> {
+    if (tasks.length === 0) return [];
+
+    const payloads = tasks.map(createMigrationPayload);
+    const migrationKeys = payloads.map((payload) => payload.migration_key!);
+    const { error: importError } = await this.client
+      .from("tasks")
+      .upsert(payloads, {
+        ignoreDuplicates: true,
+        onConflict: "user_id,migration_key",
+      });
+
+    if (importError) {
+      throwDataError("migrate local tasks", importError);
+    }
+
+    const { data, error } = await this.client
+      .from("tasks")
+      .select("*")
+      .in("migration_key", migrationKeys);
+
+    if (error) {
+      throwDataError("verify migrated tasks", error);
+    }
+
+    if (data.length !== new Set(migrationKeys).size) {
+      throw new Error("Cloud migration could not verify every local task.");
+    }
+
+    return data.map(toTask);
   }
 
   subscribe(listener: TaskRepositoryListener): Unsubscribe {

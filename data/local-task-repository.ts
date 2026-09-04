@@ -158,6 +158,46 @@ export class LocalTaskRepository implements ResettableTaskRepository {
     return task ? { ...task } : null;
   }
 
+  async getMigrationTasks(): Promise<Task[]> {
+    const storage = this.getStorage();
+
+    if (storage) {
+      try {
+        for (const key of [TASK_STORAGE_KEY, ...LEGACY_TASK_STORAGE_KEYS]) {
+          const raw = storage.getItem(key);
+          if (raw === null) continue;
+          const parsed = parseStoredTasks(raw);
+          if (parsed) return cloneTasks(parsed);
+        }
+      } catch {
+        // Fall through to the session copy when browser storage is blocked.
+      }
+    }
+
+    return this.volatileTasks ? cloneTasks(this.volatileTasks) : [];
+  }
+
+  async clearMigrationTasks(): Promise<void> {
+    const previousTasks = await this.getMigrationTasks();
+    const storage = this.getStorage();
+
+    if (!storage) {
+      this.volatileTasks = [];
+      this.notify([]);
+      return;
+    }
+
+    if (!this.writeTasks([])) {
+      this.volatileTasks = previousTasks;
+      throw new TaskRepositoryError(
+        "storage_unavailable",
+        "Local tasks could not be cleared after cloud migration.",
+      );
+    }
+
+    this.notify([]);
+  }
+
   async createTask(input: CreateTaskInput): Promise<Task> {
     const now = this.now().toISOString();
     const task: Task = {
