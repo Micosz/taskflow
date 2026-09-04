@@ -68,4 +68,75 @@ The revised browser capture was inspected with all four supplied source crops in
 
 - Optional P3: test the same layout against the user's longest real Thai task title after their browser reload; the current height-aware rules are designed for that state, but the local fixture uses shorter English task titles.
 
+previous pass result: passed
+
+---
+
+# Design QA — List-driven Task Preview
+
+## Comparison Target
+
+- Source visual truth: `/tmp/codex-clipboard-348effc3-da1f-4dd1-b4de-bad106fc47b9.png`, 307 × 61 PNG. The focused crop shows the deadline label and countdown with insufficient separation.
+- Interaction target: the user's written flow—nearest-deadline task previews first; clicking another list task replaces the preview instead of opening a dialog; full details remain available from the preview.
+- Implementation: `http://127.0.0.1:4173/`.
+- Implementation screenshot evidence: Codex in-app Browser Tab 3 final capture (browser-rendered tool artifact; the capture API did not expose a local filesystem path).
+- Implementation pixels / CSS viewport: 1280 × 720 at device scale factor 1 and browser zoom 100%.
+- State: Thai UI, guest mode, Unfinished view, “Finish CS263 Requirement Diagram” selected from the right list, no modal open.
+- Normalization: the 307 × 61 source is a focused crop, so its label/countdown region was compared directly with the matching region in the 1× browser capture. Full-page geometry was reviewed separately for regression.
+
+## Full-view Comparison Evidence
+
+The final browser capture preserves the existing editorial split, fixed focus panel, independently scrolling task list, typography, palette, atmosphere image, and persistent footer. The selected task is visibly highlighted in the right list and its title, description, course, deadline, and time are reflected in the left preview. The document remains exactly one viewport tall (`clientHeight: 720`, `scrollHeight: 720`) and the focus footer remains visible at y = 705.61.
+
+## Focused Region Comparison Evidence
+
+- Deadline spacing: the source shows `DUE` and the clock/countdown almost touching. The revised region uses a wrapping flex row with a `0.85rem` gap; the browser-measured visible separation is 13.59px.
+- List selection: the initial selected row is the first item returned by deadline sorting. Selecting “Finish CS263 Requirement Diagram” changed the left preview and `aria-pressed` state without opening a dialog.
+- Full details: clicking the preview title opened the existing detail dialog for that selected task. Long descriptions additionally render the localized “View full details / ดูรายละเอียดทั้งหมด” control; server-rendered component coverage verifies this state.
+
+## Required Fidelity Surfaces
+
+- Fonts and typography: passed. Existing display and utility type scales are unchanged; the new details affordance uses the established 12px utility scale and optical underline treatment.
+- Spacing and layout rhythm: passed. The deadline label/countdown gap is now 13.59px, and selected-row emphasis does not change row height or grid alignment.
+- Colors and visual tokens: passed. Selection uses the existing mineral-sage token at low opacity; deadline urgency retains the established rust-red semantic color.
+- Image quality and asset fidelity: passed. `/public/editorial-atmosphere.png` and all existing icon assets remain unchanged.
+- Copy and content: passed. English and Thai accessibility labels were added for preview selection and full-details access; live task content remains the source of truth.
+
+## Findings
+
+- No actionable P0, P1, or P2 findings remain.
+- [P3] The local guest fixture does not contain a description long enough to expose the new full-details text control visually. The long-description render path is covered by an automated component test, while the same dialog-opening handler was verified interactively through the preview title.
+
+## Interaction And Browser Verification
+
+- Initial preview: “Submit assignment,” the first and nearest deadline in the sorted Unfinished list.
+- List click: selected “Finish CS263 Requirement Diagram”; preview changed and no dialog appeared.
+- Preview click: opened the correct task detail dialog; closing returned to the selected preview.
+- Selected-state accessibility: list trigger changed from `aria-pressed=false` to `aria-pressed=true`.
+- Deadline spacing: 13.59px measured between label and countdown.
+- No-overflow regression: document remains `720 / 720`; footer remains fully visible.
+- No Next.js error overlay was present in the final capture.
+- Automated checks: ESLint passed; TypeScript passed; 13 test files / 65 tests passed; production build passed.
+
+## Comparison History
+
+1. Initial evidence identified a P2 deadline-spacing issue and the existing interaction opened every list item in a modal instead of using the focus preview.
+2. Fixes applied: added list-driven preview selection with nearest-deadline fallback; reset fallback on view/search changes; moved dialog opening to the focus preview; added a localized full-details affordance for long descriptions; added selected-row state; changed the deadline region to a flex row with explicit spacing.
+3. Post-fix evidence confirmed a 13.59px deadline gap, correct selected-row/preview synchronization, no modal on list selection, correct modal content from the preview, and no page-overflow regression.
+
+## Implementation Checklist
+
+- [x] Nearest deadline is the default preview.
+- [x] Right-list click replaces the left preview.
+- [x] List selection no longer opens the detail dialog.
+- [x] Full details remain available from the preview.
+- [x] Long descriptions expose a dedicated full-details affordance.
+- [x] Due label and countdown have explicit measured spacing.
+- [x] English/Thai accessibility copy and selected state added.
+- [x] Lint, typecheck, 65 tests, build, and browser verification passed.
+
+## Follow-up Polish
+
+- Optional P3: verify the long-description affordance against the user's longest production task after deployment; the local fixture only exercises it through the component test.
+
 final result: passed
