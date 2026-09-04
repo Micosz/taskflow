@@ -47,6 +47,7 @@ describe("translation catalogs", () => {
 
       expect(Object.values(messages.auth).every(Boolean)).toBe(true);
       expect(Object.values(messages.courses).every(Boolean)).toBe(true);
+      expect(Object.values(messages.countdown.units).every(Boolean)).toBe(true);
       expect(Object.values(messages.migration).every(Boolean)).toBe(true);
       expect(Object.values(messages.deleteDialog).every(Boolean)).toBe(true);
       expect(Object.values(messages.validation).every(Boolean)).toBe(true);

@@ -15,6 +15,7 @@ import {
 } from "@/i18n";
 import { formatClockTime, formatCompactDate, getDayDifference } from "@/lib/date";
 import type { Task, TaskPriority } from "@/types/task";
+import { TaskCountdown } from "./task-countdown";
 
 interface TaskCardProps {
   task: Task;
@@ -142,6 +143,7 @@ export function TaskCard({
                     {task.description}
                   </p>
                 )}
+                <TaskCountdown task={task} locale={locale} messages={messages} />
               </div>
 
               <div className="flex shrink-0 items-center gap-1 sm:-mr-1 sm:-mt-1">
