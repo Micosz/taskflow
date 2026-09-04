@@ -25,9 +25,9 @@ import {
 import { useAuthSession } from "@/features/auth/use-auth-session";
 import { useCourseManager } from "@/features/courses/use-course-manager";
 import {
-  getNextActiveTask,
   getTaskStats,
   getTaskViewCounts,
+  selectPreviewTask,
   selectTaskById,
   selectTasks,
 } from "@/features/tasks/task-selectors";
@@ -81,6 +81,7 @@ export function TaskFlowApp() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [previewTaskId, setPreviewTaskId] = useState<string | null>(null);
   const [returnToDetailTaskId, setReturnToDetailTaskId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [courseManagerOpen, setCourseManagerOpen] = useState(false);
@@ -171,10 +172,9 @@ export function TaskFlowApp() {
     () => scopeIsCurrent ? selectTaskById(taskManager.tasks, detailTaskId) : null,
     [detailTaskId, scopeIsCurrent, taskManager.tasks],
   );
-  const nextTask = useMemo(() => getNextActiveTask(taskManager.tasks), [taskManager.tasks]);
   const focusTask = useMemo(
-    () => visibleTasks.find((task) => !task.completed) ?? nextTask ?? visibleTasks[0] ?? null,
-    [nextTask, visibleTasks],
+    () => selectPreviewTask(visibleTasks, previewTaskId),
+    [previewTaskId, visibleTasks],
   );
   const dismissToast = useCallback(() => setToast(null), []);
   const showToast = useCallback(
@@ -193,6 +193,7 @@ export function TaskFlowApp() {
     setEditingTask(null);
     setDeleteTarget(null);
     setDetailTaskId(null);
+    setPreviewTaskId(null);
     setReturnToDetailTaskId(null);
   }, [repositorySelection.scopeKey, uiScopeKey]);
 
@@ -214,6 +215,19 @@ export function TaskFlowApp() {
     activateUiScope();
     setDetailTaskId(task.id);
   }, [activateUiScope]);
+
+  const selectPreview = useCallback((task: Task) => {
+    activateUiScope();
+    setPreviewTaskId(task.id);
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      window.requestAnimationFrame(() => {
+        document.querySelector(".editorial-focus")?.scrollIntoView({
+          behavior: reduceMotion ? "auto" : "smooth",
+          block: "start",
+        });
+      });
+    }
+  }, [activateUiScope, reduceMotion]);
 
   const openDelete = useCallback((task: Task) => {
     activateUiScope();
@@ -399,6 +413,7 @@ export function TaskFlowApp() {
   const handleViewChange = useCallback((nextView: TaskView) => {
     activateUiScope();
     setSelectedView(nextView);
+    setPreviewTaskId(null);
     window.requestAnimationFrame(() => {
       document
         .getElementById("task-list")
@@ -409,6 +424,7 @@ export function TaskFlowApp() {
   const handleSearchChange = useCallback((query: string) => {
     activateUiScope();
     setSelectedSearchQuery(query);
+    setPreviewTaskId(null);
   }, [activateUiScope]);
 
   const isReady =
@@ -541,7 +557,8 @@ export function TaskFlowApp() {
                   locale={locale}
                   messages={messages}
                   busyTaskId={busyTaskId}
-                  onOpen={openDetail}
+                  selectedTaskId={focusTask?.id ?? null}
+                  onSelect={selectPreview}
                   onToggle={handleToggle}
                   onEdit={openEdit}
                   onDelete={openDelete}

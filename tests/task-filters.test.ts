@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getTaskViewCounts,
+  selectPreviewTask,
   selectTasks,
 } from "@/features/tasks/task-selectors";
 import { DEFAULT_TASK_VIEW, type Task } from "@/types/task";
@@ -93,6 +94,14 @@ describe("task view filters", () => {
 
     expect(selectTasks(sameDayTasks, "active", "", NOW).map(({ id }) => id))
       .toEqual(["new-low", "old-high"]);
+  });
+
+  it("previews the nearest deadline first, then keeps an explicit list selection", () => {
+    const visibleTasks = selectTasks(tasks, "active", "", NOW);
+
+    expect(selectPreviewTask(visibleTasks, null)?.id).toBe("overdue");
+    expect(selectPreviewTask(visibleTasks, "upcoming")?.id).toBe("upcoming");
+    expect(selectPreviewTask(visibleTasks, "missing")?.id).toBe("overdue");
   });
 
   it("reports view counts without counting completed tasks as due", () => {

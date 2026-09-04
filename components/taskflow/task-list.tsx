@@ -17,7 +17,8 @@ interface TaskListProps {
   locale: Locale;
   messages: TranslationMessages;
   busyTaskId: string | null;
-  onOpen: (task: Task) => void;
+  selectedTaskId: string | null;
+  onSelect: (task: Task) => void;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -33,7 +34,8 @@ export function TaskList({
   locale,
   messages,
   busyTaskId,
-  onOpen,
+  selectedTaskId,
+  onSelect,
   onToggle,
   onEdit,
   onDelete,
@@ -98,7 +100,8 @@ export function TaskList({
                       locale={locale}
                       messages={messages}
                       busy={busyTaskId === task.id}
-                      onOpen={onOpen}
+                      selected={selectedTaskId === task.id}
+                      onSelect={onSelect}
                       onToggle={onToggle}
                       onEdit={onEdit}
                       onDelete={onDelete}

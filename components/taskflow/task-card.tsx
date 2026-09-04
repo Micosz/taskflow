@@ -15,7 +15,8 @@ interface TaskCardProps {
   locale: Locale;
   messages: TranslationMessages;
   busy?: boolean;
-  onOpen: (task: Task) => void;
+  selected?: boolean;
+  onSelect: (task: Task) => void;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -40,7 +41,8 @@ export function TaskCard({
   locale,
   messages,
   busy = false,
-  onOpen,
+  selected = false,
+  onSelect,
   onToggle,
   onEdit,
   onDelete,
@@ -64,11 +66,13 @@ export function TaskCard({
         data-overdue={isOverdue || undefined}
         data-today={isDueToday || undefined}
         data-completed={task.completed || undefined}
+        data-selected={selected || undefined}
       >
         <button
           type="button"
-          aria-label={interpolate(messages.task.openDetails, { title: task.title })}
-          onClick={() => onOpen(task)}
+          aria-label={interpolate(messages.task.showPreview, { title: task.title })}
+          aria-pressed={selected}
+          onClick={() => onSelect(task)}
           className="absolute inset-0 z-10 focus:outline-none"
         />
 

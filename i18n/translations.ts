@@ -92,6 +92,7 @@ const english = {
     actions: "Actions for {title}",
     completionLabel: "Task completion",
     openDetails: "Open task details for “{title}”",
+    showPreview: "Show “{title}” in the focus panel",
   },
   countdown: {
     timeRemaining: "Time remaining",
@@ -170,6 +171,7 @@ const english = {
     markComplete: "Mark complete",
     reopen: "Reopen task",
     delete: "Delete",
+    viewFull: "View full details",
   },
   toast: {
     created: "Task created",
@@ -461,6 +463,7 @@ const thai: TranslationMessages = {
     actions: "การดำเนินการสำหรับ {title}",
     completionLabel: "สถานะความสำเร็จของงาน",
     openDetails: "เปิดรายละเอียดงาน “{title}”",
+    showPreview: "แสดง “{title}” ในแผงตัวอย่าง",
   },
   countdown: {
     timeRemaining: "เวลาที่เหลือ",
@@ -538,6 +541,7 @@ const thai: TranslationMessages = {
     markComplete: "ทำเครื่องหมายว่าเสร็จ",
     reopen: "เปิดงานอีกครั้ง",
     delete: "ลบ",
+    viewFull: "ดูรายละเอียดทั้งหมด",
   },
   toast: {
     created: "สร้างงานแล้ว",

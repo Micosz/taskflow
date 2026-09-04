@@ -46,6 +46,10 @@ export function FocusHero({
     total: formatNumber(safeTotal, locale),
   });
   const greeting = messages.greeting[getGreetingPeriod(now)];
+  const hasExpandableDescription = Boolean(
+    task?.description &&
+      (task.description.length > 180 || task.description.split(/\r?\n/).length > 4),
+  );
 
   return (
     <motion.section
@@ -81,7 +85,22 @@ export function FocusHero({
                 />
               </button>
               {task.description && (
-                <p className="editorial-focus__description">{task.description}</p>
+                <div
+                  className="editorial-focus__description-wrap"
+                  data-expandable={hasExpandableDescription || undefined}
+                >
+                  <p className="editorial-focus__description">{task.description}</p>
+                  {hasExpandableDescription && (
+                    <button
+                      type="button"
+                      className="editorial-focus__details-link"
+                      onClick={() => onOpen(task)}
+                    >
+                      {messages.details.viewFull}
+                      <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
+                    </button>
+                  )}
+                </div>
               )}
 
               <div className="editorial-focus__deadline">

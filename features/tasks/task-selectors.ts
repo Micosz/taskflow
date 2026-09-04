@@ -107,6 +107,13 @@ export function getNextActiveTask(tasks: readonly Task[]): Task | null {
   return sortTasks(tasks.filter((task) => !task.completed))[0] ?? null;
 }
 
+export function selectPreviewTask(
+  tasks: readonly Task[],
+  selectedTaskId: string | null,
+): Task | null {
+  return tasks.find((task) => task.id === selectedTaskId) ?? tasks[0] ?? null;
+}
+
 export function selectTaskById(
   tasks: readonly Task[],
   taskId: string | null,

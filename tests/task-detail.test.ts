@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { TaskCard } from "@/components/taskflow/task-card";
 import { TaskDetailDialog } from "@/components/taskflow/task-detail-dialog";
+import { FocusHero } from "@/components/taskflow/focus-hero";
 import {
   createTaskManagerState,
   reduceTaskManagerState,
@@ -83,22 +84,43 @@ describe("task detail experience", () => {
     expect(selectTaskById(state.tasks, "task-1")).toBeNull();
   });
 
-  it("renders card opening and explicit controls as independent buttons", () => {
+  it("renders card preview selection and explicit controls as independent buttons", () => {
     const html = renderToStaticMarkup(
       createElement(TaskCard, {
         task: task(),
         locale: "en",
         messages,
-        onOpen: vi.fn(),
+        selected: true,
+        onSelect: vi.fn(),
         onToggle: vi.fn(),
         onEdit: vi.fn(),
         onDelete: vi.fn(),
       }),
     );
 
-    expect(html).toContain("Open task details for");
+    expect(html).toContain("Show “Architecture review” in the focus panel");
+    expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("Edit task: Architecture review");
     expect(html).toContain("Delete task: Architecture review");
     expect((html.match(/<button/g) ?? [])).toHaveLength(3);
+  });
+
+  it("offers the full-detail popup from the focus panel when notes are long", () => {
+    const html = renderToStaticMarkup(
+      createElement(FocusHero, {
+        task: task({ description: "Detailed context. ".repeat(16) }),
+        now: new Date("2026-09-05T08:00:00.000Z"),
+        locale: "en",
+        messages,
+        completed: 0,
+        total: 1,
+        busy: false,
+        onOpen: vi.fn(),
+        onToggle: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("View full details");
+    expect(html).toContain("Open task details for");
   });
 });
