@@ -661,32 +661,11 @@ input[type="time"] {
 .editorial-focus__footer {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1.5rem;
   margin-top: auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 1.5rem;
-}
-
-.editorial-progress {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.editorial-progress__ring {
-  --progress: 0%;
-  display: grid;
-  width: 4.75rem;
-  height: 4.75rem;
-  flex: none;
-  place-items: center;
-  border: 0.42rem solid rgba(154, 170, 145, 0.2);
-  border-top-color: #a7b49c;
-  border-radius: 999px;
-  color: #f0eee7;
-  font-size: 1rem;
-  transform: rotate(calc(var(--progress) * 0deg));
 }
 
 .editorial-complete-button {
@@ -1023,11 +1002,6 @@ input[type="time"] {
 
   .editorial-focus__footer {
     padding-bottom: 0.9rem;
-  }
-
-  .editorial-progress__ring {
-    width: 4rem;
-    height: 4rem;
   }
 }
 

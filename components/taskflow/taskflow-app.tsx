@@ -25,7 +25,6 @@ import {
 import { useAuthSession } from "@/features/auth/use-auth-session";
 import { useCourseManager } from "@/features/courses/use-course-manager";
 import {
-  getTaskStats,
   getTaskViewCounts,
   selectPreviewTask,
   selectTaskById,
@@ -158,10 +157,6 @@ export function TaskFlowApp() {
   const referenceDate = useMemo(() => now ?? new Date(0), [now]);
   const counts = useMemo(
     () => getTaskViewCounts(taskManager.tasks, referenceDate),
-    [referenceDate, taskManager.tasks],
-  );
-  const stats = useMemo(
-    () => getTaskStats(taskManager.tasks, referenceDate),
     [referenceDate, taskManager.tasks],
   );
   const visibleTasks = useMemo(
@@ -542,8 +537,6 @@ export function TaskFlowApp() {
                     now={now}
                     locale={locale}
                     messages={messages}
-                    completed={stats.completedToday}
-                    total={stats.completedToday + stats.dueToday}
                     busy={focusTask?.id === busyTaskId}
                     onOpen={openDetail}
                     onToggle={handleToggle}

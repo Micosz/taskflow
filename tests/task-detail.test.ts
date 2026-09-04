@@ -112,8 +112,6 @@ describe("task detail experience", () => {
         now: new Date("2026-09-05T08:00:00.000Z"),
         locale: "en",
         messages,
-        completed: 0,
-        total: 1,
         busy: false,
         onOpen: vi.fn(),
         onToggle: vi.fn(),
