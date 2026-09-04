@@ -12,7 +12,6 @@ function task(id: string): Task {
     title: id,
     description: "",
     category: "Test",
-    priority: "medium",
     dueDate: "2026-09-04",
     dueTime: null,
     completed: false,

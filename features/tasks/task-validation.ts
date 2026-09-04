@@ -1,5 +1,5 @@
 import { isValidDateKey } from "@/lib/date";
-import type { CreateTaskInput, TaskPriority } from "@/types/task";
+import type { CreateTaskInput } from "@/types/task";
 
 export const TASK_FORM_LIMITS = {
   title: 160,
@@ -11,7 +11,6 @@ export interface TaskFormValues {
   title: string;
   description: string;
   category: string;
-  priority: TaskPriority;
   dueDate: string;
   dueTime: string;
 }
@@ -62,7 +61,6 @@ export function toCreateTaskInput(values: TaskFormValues): CreateTaskInput {
     title: values.title.trim(),
     description: values.description.trim(),
     category: values.category.trim(),
-    priority: values.priority,
     dueDate: values.dueDate,
     dueTime: values.dueTime || null,
   };

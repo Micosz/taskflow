@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   CircleAlert,
   Cloud,
-  Layers3,
+  ListTodo,
   Plus,
   Settings2,
   SunMedium,
@@ -27,11 +27,11 @@ interface NavigationItem {
 }
 
 const navigationItems: readonly NavigationItem[] = [
+  { view: "active", label: "active", icon: ListTodo },
   { view: "today", label: "today", icon: SunMedium },
   { view: "upcoming", label: "upcoming", icon: CalendarClock },
   { view: "overdue", label: "overdue", icon: CircleAlert },
   { view: "completed", label: "completed", icon: CheckCircle2 },
-  { view: "all", label: "all", icon: Layers3 },
 ];
 
 export interface SidebarProps {

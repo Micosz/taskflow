@@ -36,7 +36,6 @@ describe("saved-course task options", () => {
       title: "Architecture review",
       description: "",
       category: getCourseDisplayLabel(course),
-      priority: "medium",
       dueDate: "2026-09-04",
       dueTime: null,
       completed: false,

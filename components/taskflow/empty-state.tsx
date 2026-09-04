@@ -12,11 +12,11 @@ interface EmptyStateProps {
 }
 
 const emptyIcons = {
+  active: ListChecks,
   today: Sunrise,
   upcoming: CalendarCheck2,
   overdue: CheckCircle2,
   completed: Sparkles,
-  all: ListChecks,
 } as const;
 
 export function EmptyState({ view, searching, messages, onAdd, onClearSearch }: EmptyStateProps) {

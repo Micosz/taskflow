@@ -9,10 +9,10 @@ TaskFlow is a bilingual productivity web app for turning coursework, projects, a
 ## Main features
 
 - Create, edit, delete, complete, and reopen tasks.
-- Track a title, notes, course or category, priority, due date, and optional due time.
+- Track a title, notes, course or category, due date, and optional due time.
 - Save reusable university courses with an optional code and name, then select them in task forms.
 - Use **Other…** for a one-off task category without adding it to Saved Courses.
-- Switch between Today, Upcoming, Overdue, Completed, and All Tasks views.
+- Land on every unfinished task, then switch to Today, Upcoming, Overdue, or Completed filters.
 - Search across task titles, notes, and categories, with live counts and progress summaries.
 - Keep tasks and language preferences across refreshes with `localStorage`; changes also propagate between tabs on the same origin.
 - Preserve local task data behind the versioned `taskflow:v1:tasks` key, including an automatic migration from the earlier V1 key.
@@ -169,8 +169,8 @@ To test sync, run the deployed app or local app in two independent browser profi
 
 The checked-in migration creates:
 
-- A `task_priority` enum and multi-user `tasks` table with UUID ownership.
-- Constraints for title, description, category, priority, dates, and timestamps.
+- A legacy `task_priority` enum and multi-user `tasks` table with UUID ownership. The column remains for backwards compatibility but is no longer part of the product experience.
+- Constraints for title, description, category, dates, and timestamps.
 - Owner/status/due-date indexes and automatic `updated_at` maintenance.
 - RLS policies allowing authenticated users to select, insert, update, and delete only their own tasks.
 - A trigger that emits inserts, updates, and deletes through a private per-user Realtime Broadcast topic.

@@ -14,7 +14,7 @@ import {
   type TranslationMessages,
 } from "@/i18n";
 import { formatClockTime, formatCompactDate, getDayDifference } from "@/lib/date";
-import type { Task, TaskPriority } from "@/types/task";
+import type { Task } from "@/types/task";
 import { TaskCountdown } from "./task-countdown";
 
 interface TaskCardProps {
@@ -22,22 +22,11 @@ interface TaskCardProps {
   locale: Locale;
   messages: TranslationMessages;
   busy?: boolean;
+  onOpen: (task: Task) => void;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
 }
-
-const priorityStyle: Record<TaskPriority, string> = {
-  low: "border-cyan-300/15 bg-cyan-300/[0.07] text-cyan-200",
-  medium: "border-amber-300/15 bg-amber-300/[0.07] text-amber-100",
-  high: "border-rose-300/15 bg-rose-300/[0.07] text-rose-200",
-};
-
-const accentStyle: Record<TaskPriority, string> = {
-  low: "from-cyan-300/70 via-cyan-300/15",
-  medium: "from-amber-300/80 via-amber-300/15",
-  high: "from-rose-300/85 via-rose-300/15",
-};
 
 function getDueLabel(task: Task, locale: Locale, messages: TranslationMessages) {
   const difference = getDayDifference(task.dueDate);
@@ -58,6 +47,7 @@ export function TaskCard({
   locale,
   messages,
   busy = false,
+  onOpen,
   onToggle,
   onEdit,
   onDelete,
@@ -66,6 +56,13 @@ export function TaskCard({
   const dayDifference = getDayDifference(task.dueDate);
   const isOverdue = dayDifference < 0 && !task.completed;
   const isDueToday = dayDifference === 0 && !task.completed;
+  const accentStyle = task.completed
+    ? "from-emerald-300/60 via-emerald-300/10"
+    : isOverdue
+      ? "from-rose-300/85 via-rose-300/15"
+      : isDueToday
+        ? "from-violet-300/80 via-violet-300/15"
+        : "from-cyan-300/70 via-cyan-300/15";
 
   return (
     <motion.li
@@ -80,13 +77,19 @@ export function TaskCard({
       }
     >
       <article
-        className={`task-card-surface group rounded-[1.35rem] p-4 sm:rounded-[1.45rem] sm:p-[1.1rem] ${
+        className={`task-card-surface group cursor-pointer rounded-[1.35rem] p-4 focus-within:border-violet-300/30 focus-within:ring-2 focus-within:ring-violet-300/60 sm:rounded-[1.45rem] sm:p-[1.1rem] ${
           task.completed ? "bg-white/[0.018]" : ""
         }`}
       >
+        <button
+          type="button"
+          aria-label={interpolate(messages.task.openDetails, { title: task.title })}
+          onClick={() => onOpen(task)}
+          className="absolute inset-0 z-10 rounded-[inherit] focus:outline-none"
+        />
         <span
           aria-hidden="true"
-          className={`absolute inset-y-6 left-0 w-px bg-gradient-to-b ${accentStyle[task.priority]} to-transparent ${
+          className={`absolute inset-y-6 left-0 w-px bg-gradient-to-b ${accentStyle} to-transparent ${
             task.completed ? "opacity-20" : "opacity-90"
           }`}
         />
@@ -101,7 +104,7 @@ export function TaskCard({
         )}
 
         <div className="flex items-start gap-3 sm:gap-4">
-          <label className="-m-2 grid min-h-11 min-w-11 cursor-pointer place-items-center rounded-xl">
+          <label className="relative z-20 -m-2 grid min-h-11 min-w-11 cursor-pointer place-items-center rounded-xl">
             <input
               type="checkbox"
               className="peer sr-only"
@@ -146,7 +149,7 @@ export function TaskCard({
                 <TaskCountdown task={task} locale={locale} messages={messages} />
               </div>
 
-              <div className="flex shrink-0 items-center gap-1 sm:-mr-1 sm:-mt-1">
+              <div className="relative z-20 flex shrink-0 items-center gap-1 sm:-mr-1 sm:-mt-1">
                 {task.completed && (
                   <span className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-emerald-300/10 bg-emerald-300/[0.06] px-2 py-1 text-[0.65rem] font-semibold text-emerald-200 sm:mr-1">
                     <Check aria-hidden="true" size={11} strokeWidth={2.7} />
@@ -178,11 +181,6 @@ export function TaskCard({
               <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 text-[0.68rem] font-medium text-[#9ba0bb]">
                 <BookOpen aria-hidden="true" size={12} className="text-violet-300/80" />
                 {task.category}
-              </span>
-              <span
-                className={`inline-flex min-h-7 items-center rounded-full border px-2.5 text-[0.66rem] font-semibold ${priorityStyle[task.priority]}`}
-              >
-                {messages.priority[task.priority]}
               </span>
               <span
                 className={`inline-flex min-h-7 items-center gap-1.5 rounded-full border px-2.5 text-[0.68rem] font-medium ${

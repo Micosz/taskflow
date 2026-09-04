@@ -17,7 +17,7 @@ import {
   resolveTaskCategory,
 } from "@/features/courses/course-options";
 import { getCourseDisplayLabel, type Course } from "@/types/course";
-import type { CreateTaskInput, Task, TaskPriority } from "@/types/task";
+import type { CreateTaskInput, Task } from "@/types/task";
 import { useDialogA11y } from "./use-dialog-a11y";
 
 interface TaskFormDialogProps {
@@ -31,15 +31,12 @@ interface TaskFormDialogProps {
   onSubmit: (input: CreateTaskInput) => Promise<void>;
 }
 
-const priorityOptions: TaskPriority[] = ["low", "medium", "high"];
-
 function initialValues(task: Task | null): TaskFormValues {
   return task
     ? {
         title: task.title,
         description: task.description,
         category: task.category,
-        priority: task.priority,
         dueDate: task.dueDate,
         dueTime: task.dueTime ?? "",
       }
@@ -47,7 +44,6 @@ function initialValues(task: Task | null): TaskFormValues {
         title: "",
         description: "",
         category: "",
-        priority: "medium",
         dueDate: toDateKey(),
         dueTime: "",
       };
@@ -230,7 +226,7 @@ export function TaskFormDialog({
                   {fieldError("description")}
                 </label>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div>
                   <div className="block">
                     <span className="mb-2 block text-sm font-medium text-[#d9dbee]">
                       {messages.form.categoryLabel}
@@ -298,33 +294,6 @@ export function TaskFormDialog({
                     {fieldError("category")}
                   </div>
 
-                  <fieldset>
-                    <legend className="mb-2 text-sm font-medium text-[#d9dbee]">
-                      {messages.form.priorityLabel}
-                    </legend>
-                    <div className="grid min-h-12 grid-cols-3 gap-1 rounded-[0.9rem] border border-white/[0.09] bg-[#070815]/60 p-1">
-                      {priorityOptions.map((priority) => (
-                        <button
-                          type="button"
-                          key={priority}
-                          name="priority"
-                          aria-pressed={values.priority === priority}
-                          onClick={() => updateField("priority", priority)}
-                          className={`rounded-[0.7rem] px-2 text-xs font-semibold transition active:scale-[0.97] ${
-                            values.priority === priority
-                              ? priority === "high"
-                                ? "bg-rose-400/15 text-rose-200 ring-1 ring-inset ring-rose-300/20"
-                                : priority === "medium"
-                                  ? "bg-amber-300/15 text-amber-100 ring-1 ring-inset ring-amber-200/20"
-                                  : "bg-cyan-300/15 text-cyan-100 ring-1 ring-inset ring-cyan-200/20"
-                              : "text-[#8389a8] hover:bg-white/[0.04] hover:text-white"
-                          }`}
-                        >
-                          {messages.priority[priority]}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">

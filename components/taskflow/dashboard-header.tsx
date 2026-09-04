@@ -26,11 +26,11 @@ const viewHeadingKeys: Record<
   TaskView,
   { title: keyof TranslationMessages["header"]; subtitle: keyof TranslationMessages["header"] }
 > = {
+  active: { title: "activeTitle", subtitle: "activeSubtitle" },
   today: { title: "todayTitle", subtitle: "todaySubtitle" },
   upcoming: { title: "upcomingTitle", subtitle: "upcomingSubtitle" },
   overdue: { title: "overdueTitle", subtitle: "overdueSubtitle" },
   completed: { title: "completedTitle", subtitle: "completedSubtitle" },
-  all: { title: "allTitle", subtitle: "allSubtitle" },
 };
 
 export function DashboardHeader({

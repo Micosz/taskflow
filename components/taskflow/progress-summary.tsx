@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Flame, SunMedium, TriangleAlert } from "lucide-react";
+import { CheckCircle2, ListTodo, SunMedium, TriangleAlert } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import {
@@ -15,7 +15,7 @@ export interface ProgressStats {
   total: number;
   dueToday: number;
   overdue: number;
-  highPriority: number;
+  active: number;
 }
 
 export interface ProgressSummaryProps {
@@ -29,13 +29,13 @@ interface MetricProps {
   icon: typeof SunMedium;
   label: string;
   value: string;
-  tone: "violet" | "amber" | "rose";
+  tone: "violet" | "cyan" | "amber";
 }
 
 const metricTones: Record<MetricProps["tone"], string> = {
   violet: "bg-violet-400/10 text-violet-200 ring-violet-300/10",
+  cyan: "bg-cyan-400/10 text-cyan-200 ring-cyan-300/10",
   amber: "bg-amber-400/10 text-amber-200 ring-amber-300/10",
-  rose: "bg-rose-400/10 text-rose-200 ring-rose-300/10",
 };
 
 function Metric({ icon: Icon, label, value, tone }: MetricProps) {
@@ -127,10 +127,10 @@ export function ProgressSummary({
             value={formatNumber(Math.max(0, stats.dueToday), locale)}
           />
           <Metric
-            icon={Flame}
-            label={messages.stats.highPriority}
-            tone="rose"
-            value={formatNumber(Math.max(0, stats.highPriority), locale)}
+            icon={ListTodo}
+            label={messages.stats.active}
+            tone="cyan"
+            value={formatNumber(Math.max(0, stats.active), locale)}
           />
           <Metric
             icon={TriangleAlert}

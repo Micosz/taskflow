@@ -5,13 +5,7 @@ import {
   type TaskRepositoryListener,
   type Unsubscribe,
 } from "@/data/task-repository";
-import {
-  TASK_PRIORITIES,
-  type CreateTaskInput,
-  type Task,
-  type TaskPriority,
-  type UpdateTaskInput,
-} from "@/types/task";
+import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
 
 export const TASK_STORAGE_KEY = "taskflow:v1:tasks";
 
@@ -36,33 +30,46 @@ function cloneTasks(tasks: readonly Task[]): Task[] {
   return tasks.map((task) => ({ ...task }));
 }
 
-function isPriority(value: unknown): value is TaskPriority {
-  return (
-    typeof value === "string" &&
-    TASK_PRIORITIES.includes(value as TaskPriority)
-  );
-}
-
-function isTask(value: unknown): value is Task {
+function normalizeStoredTask(value: unknown): Task | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
   const task = value as Record<string, unknown>;
-  return (
-    typeof task.id === "string" &&
-    typeof task.title === "string" &&
-    typeof task.description === "string" &&
-    typeof task.category === "string" &&
-    isPriority(task.priority) &&
-    typeof task.dueDate === "string" &&
-    DATE_PATTERN.test(task.dueDate) &&
-    (task.dueTime === null ||
-      (typeof task.dueTime === "string" && TIME_PATTERN.test(task.dueTime))) &&
-    typeof task.completed === "boolean" &&
-    typeof task.createdAt === "string" &&
-    typeof task.updatedAt === "string"
-  );
+  if (
+    typeof task.id !== "string" ||
+    typeof task.title !== "string" ||
+    typeof task.description !== "string" ||
+    typeof task.category !== "string" ||
+    typeof task.dueDate !== "string" ||
+    !DATE_PATTERN.test(task.dueDate) ||
+    (task.dueTime !== null &&
+      (typeof task.dueTime !== "string" || !TIME_PATTERN.test(task.dueTime))) ||
+    typeof task.completed !== "boolean" ||
+    typeof task.createdAt !== "string" ||
+    typeof task.updatedAt !== "string"
+  ) {
+    return null;
+  }
+
+  // Older local records can contain `priority`. It is deliberately ignored
+  // while all durable task fields remain forwards compatible.
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    category: task.category,
+    dueDate: task.dueDate,
+    dueTime: task.dueTime as string | null,
+    completed: task.completed,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+  };
+}
+
+function normalizeStoredTasks(values: unknown[]): Task[] | null {
+  const tasks = values.map(normalizeStoredTask);
+  return tasks.every((task): task is Task => task !== null) ? tasks : null;
 }
 
 function parseStoredTasks(raw: string): Task[] | null {
@@ -71,7 +78,7 @@ function parseStoredTasks(raw: string): Task[] | null {
 
     // Accept the early array-only shape so V1 data remains forwards compatible.
     if (Array.isArray(parsed)) {
-      return parsed.every(isTask) ? cloneTasks(parsed) : null;
+      return normalizeStoredTasks(parsed);
     }
 
     if (!parsed || typeof parsed !== "object") {
@@ -81,13 +88,12 @@ function parseStoredTasks(raw: string): Task[] | null {
     const payload = parsed as Partial<StoredTasks>;
     if (
       payload.version !== STORAGE_VERSION ||
-      !Array.isArray(payload.tasks) ||
-      !payload.tasks.every(isTask)
+      !Array.isArray(payload.tasks)
     ) {
       return null;
     }
 
-    return cloneTasks(payload.tasks);
+    return normalizeStoredTasks(payload.tasks);
   } catch {
     return null;
   }
@@ -215,20 +221,12 @@ export class LocalTaskRepository implements ResettableTaskRepository {
       title: requireText(input.title, "title"),
       description: input.description?.trim() ?? "",
       category: requireText(input.category, "category"),
-      priority: input.priority,
       dueDate: requireDate(input.dueDate),
       dueTime: normalizeTime(input.dueTime),
       completed: false,
       createdAt: now,
       updatedAt: now,
     };
-
-    if (!isPriority(task.priority)) {
-      throw new TaskRepositoryError(
-        "invalid_input",
-        "priority must be low, medium, or high.",
-      );
-    }
 
     const tasks = [task, ...this.readTasks()];
     this.writeTasks(tasks);
@@ -247,13 +245,6 @@ export class LocalTaskRepository implements ResettableTaskRepository {
       );
     }
 
-    if (input.priority !== undefined && !isPriority(input.priority)) {
-      throw new TaskRepositoryError(
-        "invalid_input",
-        "priority must be low, medium, or high.",
-      );
-    }
-
     const current = tasks[index];
     const updated: Task = {
       ...current,
@@ -266,7 +257,6 @@ export class LocalTaskRepository implements ResettableTaskRepository {
       ...(input.category === undefined
         ? {}
         : { category: requireText(input.category, "category") }),
-      ...(input.priority === undefined ? {} : { priority: input.priority }),
       ...(input.dueDate === undefined
         ? {}
         : { dueDate: requireDate(input.dueDate) }),

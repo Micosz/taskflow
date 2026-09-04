@@ -54,7 +54,6 @@ function createStoredTask(): Task {
     title: "Migrated task",
     description: "",
     category: "Personal",
-    priority: "low",
     dueDate: "2026-09-05",
     dueTime: null,
     completed: false,
@@ -72,7 +71,6 @@ describe("LocalTaskRepository", () => {
       title: "  Prepare presentation  ",
       description: "  Add architecture slide  ",
       category: "  CS361  ",
-      priority: "high",
       dueDate: "2026-09-04",
       dueTime: "13:30",
     });
@@ -81,7 +79,6 @@ describe("LocalTaskRepository", () => {
       title: "Prepare presentation",
       description: "Add architecture slide",
       category: "CS361",
-      priority: "high",
       completed: false,
     });
 
@@ -118,7 +115,6 @@ describe("LocalTaskRepository", () => {
     const task = await repository.createTask({
       title: "Submit assignment",
       category: "CS263",
-      priority: "medium",
       dueDate: "2026-09-03",
     });
     await repository.updateTask(task.id, { completed: true });
@@ -151,6 +147,23 @@ describe("LocalTaskRepository", () => {
     expect(storage.getItem(legacyKey)).toBeNull();
   });
 
+  it("loads legacy records containing priority without exposing that field", async () => {
+    const storage = new MemoryStorage();
+    const task = createStoredTask();
+    storage.setItem(
+      TASK_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: NOW.toISOString(),
+        tasks: [{ ...task, priority: "high" }],
+      }),
+    );
+
+    const [loaded] = await createRepository(storage).getTasks();
+    expect(loaded).toEqual(task);
+    expect(loaded).not.toHaveProperty("priority");
+  });
+
   it("retains the legacy key when the migrated value cannot be persisted", async () => {
     const storage = new MemoryStorage();
     const legacyKey = "taskflow.tasks.v1";
@@ -172,7 +185,6 @@ describe("LocalTaskRepository", () => {
     await repository.createTask({
       title: "Move me",
       category: "Personal",
-      priority: "low",
       dueDate: "2026-09-04",
     });
 
@@ -188,7 +200,6 @@ describe("LocalTaskRepository", () => {
     const created = await repository.createTask({
       title: "Keep me safe",
       category: "Personal",
-      priority: "high",
       dueDate: "2026-09-04",
     });
     storage.failWrites = true;

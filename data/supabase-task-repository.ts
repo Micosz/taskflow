@@ -13,13 +13,7 @@ import type {
   TaskRow,
   TaskUpdate,
 } from "@/lib/supabase/database.types";
-import {
-  TASK_PRIORITIES,
-  type CreateTaskInput,
-  type Task,
-  type TaskPriority,
-  type UpdateTaskInput,
-} from "@/types/task";
+import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
 
 const TASK_TOPIC_PREFIX = "taskflow:tasks:";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,12 +24,9 @@ export interface SupabaseTaskRepositoryOptions {
   onRealtimeError?: (error: unknown) => void;
 }
 
-function isPriority(value: unknown): value is TaskPriority {
-  return (
-    typeof value === "string" &&
-    TASK_PRIORITIES.includes(value as TaskPriority)
-  );
-}
+// The existing non-null database column remains untouched for compatibility.
+// New records use one neutral legacy value that never reaches product logic.
+const LEGACY_PRIORITY = "medium" as const;
 
 function requireText(value: string, field: "title" | "category"): string {
   const normalized = value.trim();
@@ -71,23 +62,12 @@ function normalizeTime(value: string | null | undefined): string | null {
   return value;
 }
 
-function requirePriority(value: TaskPriority): TaskPriority {
-  if (!isPriority(value)) {
-    throw new TaskRepositoryError(
-      "invalid_input",
-      "priority must be low, medium, or high.",
-    );
-  }
-  return value;
-}
-
 function toTask(row: TaskRow): Task {
   return {
     id: row.id,
     title: row.title,
     description: row.description ?? "",
     category: row.category,
-    priority: row.priority,
     dueDate: row.due_date,
     // PostgreSQL can serialize `time` with seconds; the domain uses HH:mm.
     dueTime: row.due_time ? row.due_time.slice(0, 5) : null,
@@ -102,7 +82,7 @@ function createPayload(input: CreateTaskInput): TaskInsert {
     title: requireText(input.title, "title"),
     description: input.description?.trim() || null,
     category: requireText(input.category, "category"),
-    priority: requirePriority(input.priority),
+    priority: LEGACY_PRIORITY,
     due_date: requireDate(input.dueDate),
     due_time: normalizeTime(input.dueTime),
   };
@@ -114,7 +94,7 @@ function createMigrationPayload(task: Task): TaskInsert {
     title: requireText(task.title, "title"),
     description: task.description.trim() || null,
     category: requireText(task.category, "category"),
-    priority: requirePriority(task.priority),
+    priority: LEGACY_PRIORITY,
     due_date: requireDate(task.dueDate),
     due_time: normalizeTime(task.dueTime),
     completed: task.completed,
@@ -134,9 +114,6 @@ function updatePayload(input: UpdateTaskInput): TaskUpdate {
   }
   if (input.category !== undefined) {
     payload.category = requireText(input.category, "category");
-  }
-  if (input.priority !== undefined) {
-    payload.priority = requirePriority(input.priority);
   }
   if (input.dueDate !== undefined) {
     payload.due_date = requireDate(input.dueDate);

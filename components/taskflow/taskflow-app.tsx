@@ -28,10 +28,11 @@ import {
   getNextActiveTask,
   getTaskStats,
   getTaskViewCounts,
+  selectTaskById,
   selectTasks,
 } from "@/features/tasks/task-selectors";
 import { useTaskManager } from "@/features/tasks/use-task-manager";
-import type { CreateTaskInput, Task, TaskView } from "@/types/task";
+import { DEFAULT_TASK_VIEW, type CreateTaskInput, type Task, type TaskView } from "@/types/task";
 import { DashboardHeader } from "./dashboard-header";
 import { AuthDialog } from "./auth-dialog";
 import { CourseManagementDialog } from "./course-management-dialog";
@@ -43,6 +44,7 @@ import { ProgressSummary } from "./progress-summary";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
+import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskList } from "./task-list";
 import { Toast, type ToastMessage } from "./toast";
 import { ViewSwitcher } from "./view-switcher";
@@ -71,12 +73,15 @@ export function TaskFlowApp() {
   });
   const [locale, setLocale] = useState<Locale>("en");
   const [now, setNow] = useState<Date | null>(null);
-  const [view, setView] = useState<TaskView>("today");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [uiScopeKey, setUiScopeKey] = useState(repositorySelection.scopeKey);
+  const [selectedView, setSelectedView] = useState<TaskView>(DEFAULT_TASK_VIEW);
+  const [selectedSearchQuery, setSelectedSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [returnToDetailTaskId, setReturnToDetailTaskId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [courseManagerOpen, setCourseManagerOpen] = useState(false);
   const [courseManagerReturnToForm, setCourseManagerReturnToForm] = useState(false);
@@ -93,6 +98,9 @@ export function TaskFlowApp() {
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const messages = getTranslations(locale);
+  const scopeIsCurrent = uiScopeKey === repositorySelection.scopeKey;
+  const view = scopeIsCurrent ? selectedView : DEFAULT_TASK_VIEW;
+  const searchQuery = scopeIsCurrent ? selectedSearchQuery : "";
 
   useEffect(() => {
     const userId = auth.user?.id ?? null;
@@ -159,6 +167,10 @@ export function TaskFlowApp() {
     () => selectTasks(taskManager.tasks, view, searchQuery, referenceDate),
     [referenceDate, searchQuery, taskManager.tasks, view],
   );
+  const detailTask = useMemo(
+    () => scopeIsCurrent ? selectTaskById(taskManager.tasks, detailTaskId) : null,
+    [detailTaskId, scopeIsCurrent, taskManager.tasks],
+  );
   const nextTask = useMemo(() => getNextActiveTask(taskManager.tasks), [taskManager.tasks]);
   const dismissToast = useCallback(() => setToast(null), []);
   const showToast = useCallback(
@@ -168,13 +180,45 @@ export function TaskFlowApp() {
     [],
   );
 
+  const activateUiScope = useCallback(() => {
+    if (uiScopeKey === repositorySelection.scopeKey) return;
+    setUiScopeKey(repositorySelection.scopeKey);
+    setSelectedView(DEFAULT_TASK_VIEW);
+    setSelectedSearchQuery("");
+    setFormOpen(false);
+    setEditingTask(null);
+    setDeleteTarget(null);
+    setDetailTaskId(null);
+    setReturnToDetailTaskId(null);
+  }, [repositorySelection.scopeKey, uiScopeKey]);
+
   const openCreate = useCallback(() => {
+    activateUiScope();
     setEditingTask(null);
     setFormRevision((revision) => revision + 1);
     setFormOpen(true);
-  }, []);
+  }, [activateUiScope]);
 
   const openEdit = useCallback((task: Task) => {
+    activateUiScope();
+    setEditingTask(task);
+    setFormRevision((revision) => revision + 1);
+    setFormOpen(true);
+  }, [activateUiScope]);
+
+  const openDetail = useCallback((task: Task) => {
+    activateUiScope();
+    setDetailTaskId(task.id);
+  }, [activateUiScope]);
+
+  const openDelete = useCallback((task: Task) => {
+    activateUiScope();
+    setDeleteTarget(task);
+  }, [activateUiScope]);
+
+  const openEditFromDetail = useCallback((task: Task) => {
+    setReturnToDetailTaskId(task.id);
+    setDetailTaskId(null);
     setEditingTask(task);
     setFormRevision((revision) => revision + 1);
     setFormOpen(true);
@@ -183,9 +227,20 @@ export function TaskFlowApp() {
   const closeForm = useCallback(() => {
     setFormOpen(false);
     setEditingTask(null);
-  }, []);
+    if (returnToDetailTaskId) setDetailTaskId(returnToDetailTaskId);
+    setReturnToDetailTaskId(null);
+  }, [returnToDetailTaskId]);
 
-  const closeDeleteDialog = useCallback(() => setDeleteTarget(null), []);
+  const closeDeleteDialog = useCallback(() => {
+    setDeleteTarget(null);
+    if (returnToDetailTaskId) setDetailTaskId(returnToDetailTaskId);
+    setReturnToDetailTaskId(null);
+  }, [returnToDetailTaskId]);
+  const openDeleteFromDetail = useCallback((task: Task) => {
+    setReturnToDetailTaskId(task.id);
+    setDetailTaskId(null);
+    setDeleteTarget(task);
+  }, []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const openAuth = useCallback(() => {
     if (!auth.configured) return;
@@ -214,7 +269,10 @@ export function TaskFlowApp() {
   const handleSave = async (input: CreateTaskInput) => {
     try {
       if (editingTask) {
-        await taskManager.updateTask(editingTask.id, input);
+        const updatedTask = await taskManager.updateTask(editingTask.id, input);
+        if (returnToDetailTaskId === editingTask.id) {
+          setDetailTaskId(updatedTask.id);
+        }
         showToast(messages.toast.updated, messages.toast.updatedDescription);
       } else {
         await taskManager.createTask(input);
@@ -222,6 +280,7 @@ export function TaskFlowApp() {
       }
       setFormOpen(false);
       setEditingTask(null);
+      setReturnToDetailTaskId(null);
     } catch {
       showToast(messages.toast.error, messages.toast.errorDescription, "error");
     }
@@ -247,6 +306,7 @@ export function TaskFlowApp() {
     try {
       await taskManager.deleteTask(task.id);
       setDeleteTarget(null);
+      setReturnToDetailTaskId(null);
       showToast(messages.toast.deleted, messages.toast.deletedDescription);
     } catch {
       showToast(messages.toast.error, messages.toast.errorDescription, "error");
@@ -268,6 +328,8 @@ export function TaskFlowApp() {
     setFormOpen(false);
     setEditingTask(null);
     setDeleteTarget(null);
+    setDetailTaskId(null);
+    setReturnToDetailTaskId(null);
     setMigrationOffer(null);
     setCourseManagerOpen(false);
     try {
@@ -331,13 +393,19 @@ export function TaskFlowApp() {
   };
 
   const handleViewChange = useCallback((nextView: TaskView) => {
-    setView(nextView);
+    activateUiScope();
+    setSelectedView(nextView);
     window.requestAnimationFrame(() => {
       document
         .getElementById("task-list")
         ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     });
-  }, [reduceMotion]);
+  }, [activateUiScope, reduceMotion]);
+
+  const handleSearchChange = useCallback((query: string) => {
+    activateUiScope();
+    setSelectedSearchQuery(query);
+  }, [activateUiScope]);
 
   const isReady =
     auth.isInitialized && taskManager.status === "ready" && now !== null;
@@ -404,7 +472,7 @@ export function TaskFlowApp() {
               view={view}
               now={now}
               searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              onSearchChange={handleSearchChange}
               onLocaleChange={handleLocaleChange}
               onAdd={openCreate}
               onSettings={() => setSettingsOpen(true)}
@@ -458,7 +526,7 @@ export function TaskFlowApp() {
                     total: stats.completedToday + stats.dueToday,
                     dueToday: stats.dueToday,
                     overdue: stats.overdue,
-                    highPriority: stats.highPriority,
+                    active: stats.active,
                   }}
                 />
 
@@ -470,11 +538,12 @@ export function TaskFlowApp() {
                     locale={locale}
                     messages={messages}
                     busyTaskId={busyTaskId}
+                    onOpen={openDetail}
                     onToggle={handleToggle}
                     onEdit={openEdit}
-                    onDelete={setDeleteTarget}
+                    onDelete={openDelete}
                     onAdd={openCreate}
-                    onClearSearch={() => setSearchQuery("")}
+                    onClearSearch={() => handleSearchChange("")}
                   />
 
                   <aside className="hidden space-y-4 2xl:block">
@@ -523,8 +592,8 @@ export function TaskFlowApp() {
 
       <TaskFormDialog
         key={`task-form-${formRevision}`}
-        open={formOpen}
-        task={editingTask}
+        open={scopeIsCurrent && formOpen}
+        task={scopeIsCurrent ? editingTask : null}
         courses={courseManager.courses}
         courseStatus={courseManager.status}
         messages={messages}
@@ -532,8 +601,18 @@ export function TaskFlowApp() {
         onManageCourses={openCourseManagerFromForm}
         onSubmit={handleSave}
       />
+      <TaskDetailDialog
+        task={detailTask}
+        locale={locale}
+        messages={messages}
+        busy={detailTask?.id === busyTaskId}
+        onClose={() => setDetailTaskId(null)}
+        onEdit={openEditFromDetail}
+        onToggle={handleToggle}
+        onDelete={openDeleteFromDetail}
+      />
       <DeleteTaskDialog
-        task={deleteTarget}
+        task={scopeIsCurrent ? deleteTarget : null}
         messages={messages}
         onClose={closeDeleteDialog}
         onConfirm={handleDelete}

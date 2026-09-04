@@ -1,26 +1,26 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CheckCircle2, Layers3, Plus, SunMedium } from "lucide-react";
+import { CalendarClock, CheckCircle2, ListTodo, Plus, SunMedium } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
 import type { TaskView } from "@/types/task";
 
 interface MobileNavigationItem {
-  view: Extract<TaskView, "today" | "upcoming" | "completed" | "all">;
+  view: Extract<TaskView, "active" | "today" | "upcoming" | "completed">;
   label: keyof TranslationMessages["navigation"];
   icon: LucideIcon;
 }
 
 const leadingItems: readonly MobileNavigationItem[] = [
+  { view: "active", label: "active", icon: ListTodo },
   { view: "today", label: "today", icon: SunMedium },
-  { view: "upcoming", label: "upcoming", icon: CalendarClock },
 ];
 
 const trailingItems: readonly MobileNavigationItem[] = [
+  { view: "upcoming", label: "upcoming", icon: CalendarClock },
   { view: "completed", label: "completed", icon: CheckCircle2 },
-  { view: "all", label: "all", icon: Layers3 },
 ];
 
 export interface MobileNavigationProps {

@@ -1,11 +1,5 @@
 import { toDateKey } from "@/lib/date";
-import type { Task, TaskPriority, TaskView } from "@/types/task";
-
-const PRIORITY_WEIGHT: Record<TaskPriority, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
-};
+import type { Task, TaskView } from "@/types/task";
 
 export interface TaskStats {
   total: number;
@@ -14,13 +8,14 @@ export interface TaskStats {
   dueToday: number;
   completedToday: number;
   overdue: number;
-  highPriority: number;
   completionRate: number;
   focusRate: number;
 }
 
 export function isTaskInView(task: Task, view: TaskView, todayKey: string): boolean {
   switch (view) {
+    case "active":
+      return !task.completed;
     case "today":
       return !task.completed && task.dueDate === todayKey;
     case "upcoming":
@@ -29,8 +24,6 @@ export function isTaskInView(task: Task, view: TaskView, todayKey: string): bool
       return !task.completed && task.dueDate < todayKey;
     case "completed":
       return task.completed;
-    case "all":
-      return true;
   }
 }
 
@@ -49,9 +42,6 @@ export function sortTasks(tasks: readonly Task[]): Task[] {
     const timeDifference = leftTime.localeCompare(rightTime);
     if (timeDifference !== 0) return timeDifference;
 
-    const priorityDifference =
-      PRIORITY_WEIGHT[left.priority] - PRIORITY_WEIGHT[right.priority];
-    if (priorityDifference !== 0) return priorityDifference;
     return right.createdAt.localeCompare(left.createdAt);
   });
 }
@@ -83,11 +73,11 @@ export function getTaskViewCounts(
 ): Record<TaskView, number> {
   const todayKey = toDateKey(now);
   return {
+    active: tasks.filter((task) => !task.completed).length,
     today: tasks.filter((task) => isTaskInView(task, "today", todayKey)).length,
     upcoming: tasks.filter((task) => isTaskInView(task, "upcoming", todayKey)).length,
     overdue: tasks.filter((task) => isTaskInView(task, "overdue", todayKey)).length,
     completed: tasks.filter((task) => task.completed).length,
-    all: tasks.length,
   };
 }
 
@@ -106,7 +96,6 @@ export function getTaskStats(tasks: readonly Task[], now = new Date()): TaskStat
     dueToday: activeToday,
     completedToday,
     overdue: tasks.filter((task) => !task.completed && task.dueDate < todayKey).length,
-    highPriority: tasks.filter((task) => !task.completed && task.priority === "high").length,
     completionRate: tasks.length ? Math.round((completed / tasks.length) * 100) : 0,
     focusRate: dueTodayTasks.length
       ? Math.round((completedToday / dueTodayTasks.length) * 100)
@@ -116,4 +105,11 @@ export function getTaskStats(tasks: readonly Task[], now = new Date()): TaskStat
 
 export function getNextActiveTask(tasks: readonly Task[]): Task | null {
   return sortTasks(tasks.filter((task) => !task.completed))[0] ?? null;
+}
+
+export function selectTaskById(
+  tasks: readonly Task[],
+  taskId: string | null,
+): Task | null {
+  return taskId ? tasks.find((task) => task.id === taskId) ?? null : null;
 }

@@ -1,16 +1,13 @@
-export const TASK_PRIORITIES = ["low", "medium", "high"] as const;
-
-export type TaskPriority = (typeof TASK_PRIORITIES)[number];
-
 export const TASK_VIEWS = [
+  "active",
   "today",
   "upcoming",
   "overdue",
   "completed",
-  "all",
 ] as const;
 
 export type TaskView = (typeof TASK_VIEWS)[number];
+export const DEFAULT_TASK_VIEW: TaskView = "active";
 export type TaskFilter = TaskView;
 export type TaskStatus = "active" | "completed";
 export type TaskCategory = string;
@@ -26,7 +23,6 @@ export interface Task {
   title: string;
   description: string;
   category: TaskCategory;
-  priority: TaskPriority;
   dueDate: TaskDate;
   dueTime: TaskTime;
   completed: boolean;
@@ -38,7 +34,6 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   category: TaskCategory;
-  priority: TaskPriority;
   dueDate: TaskDate;
   dueTime?: TaskTime;
 }
@@ -49,7 +44,6 @@ export type UpdateTaskInput = Partial<
     | "title"
     | "description"
     | "category"
-    | "priority"
     | "dueDate"
     | "dueTime"
     | "completed"

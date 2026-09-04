@@ -12,7 +12,6 @@ const task: Task = {
   title: "Submit assignment",
   description: "",
   category: "CS263",
-  priority: "high",
   dueDate: "2026-09-04",
   dueTime: null,
   completed: false,

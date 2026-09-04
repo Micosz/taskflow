@@ -42,7 +42,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Finalize the use-case relationships and export a clean version for the team review.",
       category: "CS263",
-      priority: "high",
       dueDate: today,
       dueTime: "17:30",
       completed: false,
@@ -55,7 +54,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Add setup instructions, architecture notes, and screenshots of the latest flow.",
       category: "CS361",
-      priority: "medium",
       dueDate: today,
       dueTime: "20:00",
       completed: false,
@@ -68,7 +66,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Turn the lecture notes into a one-page summary before the study session.",
       category: "Cloud Systems",
-      priority: "low",
       dueDate: tomorrow,
       dueTime: "18:00",
       completed: false,
@@ -81,7 +78,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Polish the product story and rehearse the five-minute demo with the final slides.",
       category: "Capstone",
-      priority: "high",
       dueDate: inThreeDays,
       dueTime: "14:00",
       completed: false,
@@ -94,7 +90,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Run the final checks, package the source files, and upload before the portal closes.",
       category: "Software Engineering",
-      priority: "high",
       dueDate: yesterday,
       dueTime: "23:59",
       completed: false,
@@ -107,7 +102,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Group the saved papers by topic and add consistent citation details.",
       category: "Research",
-      priority: "medium",
       dueDate: nextWeek,
       dueTime: null,
       completed: false,
@@ -120,7 +114,6 @@ export function createSampleTasks(now = new Date()): Task[] {
       description:
         "Capture the three most useful improvements from the prototype critique.",
       category: "TaskFlow",
-      priority: "medium",
       dueDate: today,
       dueTime: "10:00",
       completed: true,

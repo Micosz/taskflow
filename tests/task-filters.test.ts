@@ -4,7 +4,7 @@ import {
   getTaskViewCounts,
   selectTasks,
 } from "@/features/tasks/task-selectors";
-import type { Task } from "@/types/task";
+import { DEFAULT_TASK_VIEW, type Task } from "@/types/task";
 
 const NOW = new Date(2026, 8, 3, 12);
 
@@ -16,7 +16,6 @@ function createTask(overrides: Partial<Task> & Pick<Task, "id">): Task {
     title: "Test task",
     description: "Task notes",
     category: "CS263",
-    priority: "medium",
     dueDate: "2026-09-03",
     dueTime: null,
     completed: false,
@@ -44,6 +43,12 @@ const tasks: Task[] = [
 ];
 
 describe("task view filters", () => {
+  it("defaults to the complete unfinished workload", () => {
+    expect(DEFAULT_TASK_VIEW).toBe("active");
+    expect(selectTasks(tasks, DEFAULT_TASK_VIEW, "", NOW).map(({ id }) => id))
+      .toEqual(["overdue", "today", "upcoming"]);
+  });
+
   it.each([
     ["today", ["today"]],
     ["upcoming", ["upcoming"]],
@@ -55,14 +60,39 @@ describe("task view filters", () => {
     );
   });
 
-  it("keeps every task in the all view and sorts completed tasks last", () => {
-    const result = selectTasks(tasks, "all", "", NOW);
+  it("uses the active view for all and only unfinished tasks", () => {
+    const result = selectTasks(tasks, "active", "", NOW);
 
-    expect(result).toHaveLength(tasks.length);
-    expect(result.slice(-2).map((task) => task.id)).toEqual([
-      "completed-today",
-      "completed-past",
+    expect(result.map((task) => task.id)).toEqual([
+      "overdue",
+      "today",
+      "upcoming",
     ]);
+    expect(result.every((task) => !task.completed)).toBe(true);
+  });
+
+  it("sorts unfinished tasks by nearest deadline without using legacy priority", () => {
+    const sameDayTasks = [
+      {
+        ...createTask({
+          id: "old-high",
+          dueTime: "10:00",
+          createdAt: "2026-09-01T08:00:00.000Z",
+        }),
+        priority: "high",
+      },
+      {
+        ...createTask({
+          id: "new-low",
+          dueTime: "10:00",
+          createdAt: "2026-09-02T08:00:00.000Z",
+        }),
+        priority: "low",
+      },
+    ];
+
+    expect(selectTasks(sameDayTasks, "active", "", NOW).map(({ id }) => id))
+      .toEqual(["new-low", "old-high"]);
   });
 
   it("reports view counts without counting completed tasks as due", () => {
@@ -71,7 +101,7 @@ describe("task view filters", () => {
       upcoming: 1,
       overdue: 1,
       completed: 2,
-      all: 5,
+      active: 3,
     });
   });
 
@@ -92,5 +122,10 @@ describe("task view filters", () => {
     expect(selectTasks(searchable, "today", "cs361", NOW)[0]?.id).toBe(
       "searchable",
     );
+  });
+
+  it("does not search legacy priority values", () => {
+    const legacyTask = { ...createTask({ id: "legacy" }), priority: "high" };
+    expect(selectTasks([legacyTask], "active", "high", NOW)).toEqual([]);
   });
 });

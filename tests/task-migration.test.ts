@@ -16,7 +16,6 @@ function task(id: string): Task {
     title: `Task ${id}`,
     description: "Notes",
     category: "CS263",
-    priority: "high",
     dueDate: "2026-09-04",
     dueTime: "10:30",
     completed: id === "two",
