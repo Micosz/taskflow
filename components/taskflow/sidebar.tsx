@@ -1,6 +1,6 @@
 "use client";
 
-import { Cloud, Plus, Settings2 } from "lucide-react";
+import { Cloud, Plus, Search, Settings2, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
@@ -28,7 +28,9 @@ export interface SidebarProps {
   locale: Locale;
   activeView: TaskView;
   counts: Record<TaskView, number>;
+  searchQuery: string;
   onViewChange: (view: TaskView) => void;
+  onSearchChange: (query: string) => void;
   onLocaleChange: (locale: Locale) => void;
   onAdd: () => void;
   onSettings: () => void;
@@ -44,7 +46,9 @@ export function Sidebar({
   locale,
   activeView,
   counts,
+  searchQuery,
   onViewChange,
+  onSearchChange,
   onLocaleChange,
   onAdd,
   onSettings,
@@ -91,6 +95,26 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <label className="editorial-search editorial-topbar__search">
+        <span className="sr-only">{messages.header.searchLabel}</span>
+        <Search aria-hidden="true" size={18} strokeWidth={1.45} />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder={messages.header.searchPlaceholder}
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => onSearchChange("")}
+            aria-label={messages.header.clearSearch}
+          >
+            <X aria-hidden="true" size={15} />
+          </button>
+        )}
+      </label>
 
       <div className="editorial-topbar__actions">
         <motion.button

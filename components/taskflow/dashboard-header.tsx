@@ -80,7 +80,7 @@ export function DashboardHeader({
         <p className="mt-4 text-xs text-[#6f746e]">{formatLongDate(now, locale)}</p>
       </motion.div>
 
-      <div className="editorial-search-row">
+      <div className="editorial-search-row lg:hidden">
         <label className="editorial-search">
           <span className="sr-only">{messages.header.searchLabel}</span>
           <Search aria-hidden="true" size={18} strokeWidth={1.45} />

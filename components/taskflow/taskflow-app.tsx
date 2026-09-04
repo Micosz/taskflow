@@ -440,13 +440,15 @@ export function TaskFlowApp() {
       >
         {messages.accessibility.skipToContent}
       </a>
-      <div className="mx-auto min-h-[100dvh] w-full max-w-[1680px]">
+      <div className="app-shell mx-auto min-h-[100dvh] w-full max-w-[1680px]">
         <Sidebar
           messages={messages}
           locale={locale}
           activeView={view}
           counts={counts}
+          searchQuery={searchQuery}
           onViewChange={handleViewChange}
+          onSearchChange={handleSearchChange}
           onLocaleChange={handleLocaleChange}
           onAdd={openCreate}
           onSettings={() => setSettingsOpen(true)}
@@ -464,7 +466,7 @@ export function TaskFlowApp() {
           id="main-content"
           aria-label={messages.accessibility.mainContent}
           tabIndex={-1}
-          className="app-main min-w-0 pb-28 pt-5 sm:pt-7 lg:pb-10 lg:pt-0"
+          className="app-main min-w-0 pb-28 pt-5 sm:pt-7 lg:pb-0 lg:pt-0"
         >
           {now ? (
             <DashboardHeader
@@ -478,7 +480,7 @@ export function TaskFlowApp() {
               onSettings={() => setSettingsOpen(true)}
             />
           ) : (
-            <div className="h-48" aria-hidden="true" />
+            <div className="h-48 lg:hidden" aria-hidden="true" />
           )}
 
           <div className="mt-6 lg:hidden">
