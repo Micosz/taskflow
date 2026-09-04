@@ -41,10 +41,12 @@ describe("translation catalogs", () => {
   );
 
   it.each(["en", "th"] as const)(
-    "includes dialog, validation, toast, and empty-state copy in %s",
+    "includes auth, migration, dialog, validation, toast, and empty-state copy in %s",
     (locale) => {
       const messages = translations[locale];
 
+      expect(Object.values(messages.auth).every(Boolean)).toBe(true);
+      expect(Object.values(messages.migration).every(Boolean)).toBe(true);
       expect(Object.values(messages.deleteDialog).every(Boolean)).toBe(true);
       expect(Object.values(messages.validation).every(Boolean)).toBe(true);
       expect(Object.values(messages.toast).every(Boolean)).toBe(true);

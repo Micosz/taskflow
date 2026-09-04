@@ -165,4 +165,37 @@ describe("LocalTaskRepository", () => {
     expect(storage.getItem(TASK_STORAGE_KEY)).toBeNull();
     expect(storage.getItem(legacyKey)).not.toBeNull();
   });
+
+  it("clears migration tasks only when the empty state is persisted", async () => {
+    const storage = new MemoryStorage();
+    const repository = createRepository(storage);
+    await repository.createTask({
+      title: "Move me",
+      category: "Personal",
+      priority: "low",
+      dueDate: "2026-09-04",
+    });
+
+    await repository.clearMigrationTasks();
+
+    expect(await repository.getMigrationTasks()).toEqual([]);
+    expect(await repository.getTasks()).toEqual([]);
+  });
+
+  it("preserves migration tasks when clearing browser storage fails", async () => {
+    const storage = new MemoryStorage();
+    const repository = createRepository(storage);
+    const created = await repository.createTask({
+      title: "Keep me safe",
+      category: "Personal",
+      priority: "high",
+      dueDate: "2026-09-04",
+    });
+    storage.failWrites = true;
+
+    await expect(repository.clearMigrationTasks()).rejects.toMatchObject({
+      code: "storage_unavailable",
+    });
+    expect(await repository.getMigrationTasks()).toEqual([created]);
+  });
 });
