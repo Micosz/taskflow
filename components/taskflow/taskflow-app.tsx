@@ -45,6 +45,7 @@ import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
 import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskList } from "./task-list";
+import { TaskCalendar } from "./task-calendar";
 import { Toast, type ToastMessage } from "./toast";
 import { ViewSwitcher } from "./view-switcher";
 
@@ -543,21 +544,33 @@ export function TaskFlowApp() {
                   />
                 )}
 
-                <TaskList
-                  tasks={visibleTasks}
-                  view={view}
-                  searchQuery={searchQuery}
-                  locale={locale}
-                  messages={messages}
-                  busyTaskId={busyTaskId}
-                  selectedTaskId={focusTask?.id ?? null}
-                  onSelect={selectPreview}
-                  onToggle={handleToggle}
-                  onEdit={openEdit}
-                  onDelete={openDelete}
-                  onAdd={openCreate}
-                  onClearSearch={() => handleSearchChange("")}
-                />
+                <div className="editorial-planner">
+                  {now && (
+                    <TaskCalendar
+                      key={repositorySelection.scopeKey}
+                      tasks={taskManager.tasks}
+                      now={now}
+                      locale={locale}
+                      messages={messages}
+                      onOpen={openDetail}
+                    />
+                  )}
+                  <TaskList
+                    tasks={visibleTasks}
+                    view={view}
+                    searchQuery={searchQuery}
+                    locale={locale}
+                    messages={messages}
+                    busyTaskId={busyTaskId}
+                    selectedTaskId={focusTask?.id ?? null}
+                    onSelect={selectPreview}
+                    onToggle={handleToggle}
+                    onEdit={openEdit}
+                    onDelete={openDelete}
+                    onAdd={openCreate}
+                    onClearSearch={() => handleSearchChange("")}
+                  />
+                </div>
               </motion.div>
             </AnimatePresence>
           )}

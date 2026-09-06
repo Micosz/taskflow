@@ -5,6 +5,16 @@ type StringShape<T> = {
 };
 
 const english = {
+  calendar: {
+    title: "Calendar & notes",
+    subtitle: "All your events, on their due dates.",
+    nextEvent: "Next event",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    oneDayLeft: "1 day left",
+    daysLeft: "{count} days left",
+    emptyDay: "No events on this day. Select a marked date to see its notes.",
+  },
   app: {
     name: "TaskFlow",
     shortName: "TaskFlow",
@@ -376,6 +386,16 @@ const english = {
 export type TranslationMessages = StringShape<typeof english>;
 
 const thai: TranslationMessages = {
+  calendar: {
+    title: "ปฏิทินและโน้ต",
+    subtitle: "รวมทุก Event ตามวันที่กำหนดไว้",
+    nextEvent: "Event ถัดไป",
+    previousMonth: "เดือนก่อนหน้า",
+    nextMonth: "เดือนถัดไป",
+    oneDayLeft: "เหลืออีก 1 วัน",
+    daysLeft: "เหลืออีก {count} วัน",
+    emptyDay: "วันนี้ไม่มี Event เลือกวันที่มีรายการเพื่อดูโน้ตได้เลย",
+  },
   app: {
     name: "TaskFlow",
     shortName: "TaskFlow",
