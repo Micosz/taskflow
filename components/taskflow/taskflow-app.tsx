@@ -412,7 +412,7 @@ export function TaskFlowApp() {
     setPreviewTaskId(null);
     window.requestAnimationFrame(() => {
       document
-        .getElementById("task-list")
+        .getElementById(nextView === "active" ? "main-content" : "task-list")
         ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     });
   }, [activateUiScope, reduceMotion]);
@@ -545,7 +545,7 @@ export function TaskFlowApp() {
                 )}
 
                 <div className="editorial-planner">
-                  {now && (
+                  {view === "active" && now && (
                     <TaskCalendar
                       key={repositorySelection.scopeKey}
                       tasks={taskManager.tasks}

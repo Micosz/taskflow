@@ -36,7 +36,7 @@ const english = {
   },
   navigation: {
     label: "Task views",
-    active: "Unfinished",
+    active: "Overview",
     today: "Today",
     upcoming: "Upcoming",
     overdue: "Overdue",
@@ -46,8 +46,8 @@ const english = {
     closeMenu: "Close navigation",
   },
   header: {
-    activeTitle: "Everything still in motion",
-    activeSubtitle: "All unfinished work, ordered by the deadline that needs you next.",
+    activeTitle: "Overview",
+    activeSubtitle: "Your calendar, event notes, and unfinished work in one place.",
     todayTitle: "Today’s focus",
     todaySubtitle: "A clear view of what deserves your attention now.",
     upcomingTitle: "Plan what’s next",
@@ -71,7 +71,7 @@ const english = {
     progressValue: "{completed} of {total} done",
   },
   view: {
-    active: "Unfinished",
+    active: "Overview",
     today: "Today",
     upcoming: "Upcoming",
     overdue: "Overdue",
@@ -417,7 +417,7 @@ const thai: TranslationMessages = {
   },
   navigation: {
     label: "มุมมองงาน",
-    active: "งานที่ยังไม่เสร็จ",
+    active: "ภาพรวม",
     today: "วันนี้",
     upcoming: "เร็ว ๆ นี้",
     overdue: "เลยกำหนด",
@@ -427,8 +427,8 @@ const thai: TranslationMessages = {
     closeMenu: "ปิดเมนูนำทาง",
   },
   header: {
-    activeTitle: "ทุกงานที่ยังดำเนินอยู่",
-    activeSubtitle: "รวมงานที่ยังไม่เสร็จทั้งหมด เรียงตามกำหนดส่งที่ควรจัดการก่อน",
+    activeTitle: "ภาพรวม",
+    activeSubtitle: "รวมปฏิทิน โน้ตของ Event และงานที่ยังไม่เสร็จไว้ในที่เดียว",
     todayTitle: "โฟกัสของวันนี้",
     todaySubtitle: "มองเห็นสิ่งที่ควรให้ความสำคัญตอนนี้ได้อย่างชัดเจน",
     upcomingTitle: "วางแผนสิ่งที่จะทำต่อไป",
@@ -452,7 +452,7 @@ const thai: TranslationMessages = {
     progressValue: "เสร็จแล้ว {completed} จาก {total}",
   },
   view: {
-    active: "งานที่ยังไม่เสร็จ",
+    active: "ภาพรวม",
     today: "วันนี้",
     upcoming: "เร็ว ๆ นี้",
     overdue: "เลยกำหนด",
