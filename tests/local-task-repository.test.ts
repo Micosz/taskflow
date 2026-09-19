@@ -44,7 +44,6 @@ function createRepository(storage: Storage): LocalTaskRepository {
   return new LocalTaskRepository({
     storage,
     now: () => NOW,
-    createSeedTasks: () => [],
   });
 }
 
@@ -63,6 +62,36 @@ function createStoredTask(): Task {
 }
 
 describe("LocalTaskRepository", () => {
+  it("starts guest mode empty without creating sample tasks", async () => {
+    const storage = new MemoryStorage();
+
+    expect(await createRepository(storage).getTasks()).toEqual([]);
+    expect(JSON.parse(storage.getItem(TASK_STORAGE_KEY) ?? "{}").tasks).toEqual([]);
+  });
+
+  it("removes legacy samples while preserving real guest tasks", async () => {
+    const storage = new MemoryStorage();
+    const realTask = createStoredTask();
+    storage.setItem(
+      TASK_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        savedAt: NOW.toISOString(),
+        tasks: [
+          { ...realTask, id: "sample-cs361-readme", title: "Old demo" },
+          realTask,
+        ],
+      }),
+    );
+
+    const repository = createRepository(storage);
+    expect(await repository.getTasks()).toEqual([realTask]);
+    expect(await repository.getMigrationTasks()).toEqual([realTask]);
+    expect(JSON.parse(storage.getItem(TASK_STORAGE_KEY) ?? "{}").tasks).toEqual([
+      realTask,
+    ]);
+  });
+
   it("creates, updates, serializes, reloads, and deletes tasks", async () => {
     const storage = new MemoryStorage();
     const repository = createRepository(storage);

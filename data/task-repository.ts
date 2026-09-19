@@ -16,10 +16,6 @@ export interface TaskRepository {
   subscribe(listener: TaskRepositoryListener): Unsubscribe;
 }
 
-export interface ResettableTaskRepository extends TaskRepository {
-  resetToSampleTasks(): Promise<Task[]>;
-}
-
 export type TaskRepositoryErrorCode =
   | "not_found"
   | "invalid_input"

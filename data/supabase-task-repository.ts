@@ -4,6 +4,7 @@ import {
   type TaskRepositoryListener,
   type Unsubscribe,
 } from "@/data/task-repository";
+import { LEGACY_SAMPLE_MIGRATION_KEYS } from "@/data/legacy-sample-tasks";
 import {
   createSupabaseBrowserClient,
   type TaskFlowSupabaseClient,
@@ -153,6 +154,7 @@ function throwDataError(
 export class SupabaseTaskRepository implements TaskRepository {
   private readonly client: TaskFlowSupabaseClient;
   private readonly onRealtimeError: (error: unknown) => void;
+  private legacySamplesRemoved = false;
 
   constructor(
     private readonly userId: string,
@@ -167,6 +169,8 @@ export class SupabaseTaskRepository implements TaskRepository {
   }
 
   async getTasks(): Promise<Task[]> {
+    await this.removeLegacySampleTasks();
+
     const { data, error } = await this.client
       .from("tasks")
       .select("*")
@@ -180,6 +184,21 @@ export class SupabaseTaskRepository implements TaskRepository {
     }
 
     return data.map(toTask);
+  }
+
+  private async removeLegacySampleTasks(): Promise<void> {
+    if (this.legacySamplesRemoved) return;
+
+    const { error } = await this.client
+      .from("tasks")
+      .delete()
+      .in("migration_key", LEGACY_SAMPLE_MIGRATION_KEYS);
+
+    if (error) {
+      throwDataError("remove legacy sample tasks", error);
+    }
+
+    this.legacySamplesRemoved = true;
   }
 
   async getTask(id: string): Promise<Task | null> {

@@ -327,15 +327,6 @@ export function TaskFlowApp() {
     }
   };
 
-  const handleReset = async () => {
-    try {
-      await taskManager.resetTasks();
-      showToast(messages.toast.reset, messages.toast.createdDescription);
-    } catch {
-      showToast(messages.toast.error, messages.toast.errorDescription, "error");
-    }
-  };
-
   const handleSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
@@ -618,12 +609,10 @@ export function TaskFlowApp() {
         locale={locale}
         messages={messages}
         onLocaleChange={handleLocaleChange}
-        onReset={handleReset}
         onClose={closeSettings}
         authConfigured={auth.configured}
         accountDetail={accountDetail}
         accountLabel={accountLabel}
-        canReset={taskManager.canReset}
         isSigningOut={isSigningOut}
         courseCount={courseManager.courses.length}
         onManageCourses={openCourseManagerFromSettings}

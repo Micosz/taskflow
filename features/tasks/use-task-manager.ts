@@ -1,21 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 
-import type {
-  ResettableTaskRepository,
-  TaskRepository,
-} from "@/data/task-repository";
+import type { TaskRepository } from "@/data/task-repository";
 import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
 
 import {
   createTaskManagerState,
   reduceTaskManagerState,
 } from "./task-manager-state";
-
-function isResettableRepository(
-  repository: TaskRepository,
-): repository is ResettableTaskRepository {
-  return "resetToSampleTasks" in repository;
-}
 
 export interface UseTaskManagerOptions {
   enabled?: boolean;
@@ -113,21 +104,10 @@ export function useTaskManager({
     [repository, scopeKey],
   );
 
-  const resetTasks = useCallback(async () => {
-    if (!isResettableRepository(repository)) {
-      throw new Error("This repository does not support sample task resets.");
-    }
-    const tasks = await repository.resetToSampleTasks();
-    dispatch({ type: "loaded", scopeKey, tasks });
-    return tasks;
-  }, [repository, scopeKey]);
-
   return {
-    canReset: isResettableRepository(repository),
     createTask,
     deleteTask,
     loadTasks,
-    resetTasks,
     status: visibleState.status,
     tasks: visibleState.tasks,
     toggleTask,

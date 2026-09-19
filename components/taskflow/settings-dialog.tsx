@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   BookOpen,
@@ -7,7 +7,6 @@ import {
   Languages,
   LogIn,
   LogOut,
-  RefreshCcw,
   Share,
   ShieldCheck,
   UserRound,
@@ -22,12 +21,10 @@ interface SettingsDialogProps {
   locale: Locale;
   messages: TranslationMessages;
   onLocaleChange: (locale: Locale) => void;
-  onReset: () => Promise<void>;
   onClose: () => void;
   authConfigured: boolean;
   accountDetail: string;
   accountLabel: string;
-  canReset: boolean;
   isSigningOut: boolean;
   onOpenAuth: () => void;
   onSignOut: () => Promise<void>;
@@ -42,12 +39,10 @@ export function SettingsDialog({
   locale,
   messages,
   onLocaleChange,
-  onReset,
   onClose,
   authConfigured,
   accountDetail,
   accountLabel,
-  canReset,
   isSigningOut,
   onOpenAuth,
   onSignOut,
@@ -60,31 +55,14 @@ export function SettingsDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone =
     typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
   const handleClose = useCallback(() => {
-    setConfirmReset(false);
     onClose();
   }, [onClose]);
 
   useDialogA11y(open, dialogRef, handleClose);
-
-  const handleReset = async () => {
-    if (!confirmReset) {
-      setConfirmReset(true);
-      return;
-    }
-    setIsResetting(true);
-    try {
-      await onReset();
-      setConfirmReset(false);
-    } finally {
-      setIsResetting(false);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -237,29 +215,6 @@ export function SettingsDialog({
                         ? messages.settings.cloudDataDescription
                         : messages.settings.dataDescription}
                     </p>
-                    {canReset ? (
-                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-rose-300/10 bg-rose-400/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-xs font-semibold text-[#d8daea]">{messages.settings.resetTitle}</p>
-                          <p className="mt-1 text-[11px] leading-4 text-[#858ba8]">
-                            {confirmReset ? messages.settings.resetWarning : messages.settings.resetDescription}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          disabled={isResetting}
-                          onClick={handleReset}
-                          className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-3.5 text-xs font-semibold transition active:scale-[0.98] ${
-                            confirmReset
-                              ? "border-rose-300/25 bg-rose-400/15 text-rose-100"
-                              : "border-white/[0.08] bg-white/[0.035] text-[#b5b9cf] hover:bg-white/[0.07] hover:text-white"
-                          }`}
-                        >
-                          <RefreshCcw aria-hidden="true" size={14} />
-                          {confirmReset ? messages.settings.resetConfirm : messages.settings.resetAction}
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
                 </div>
               </section>

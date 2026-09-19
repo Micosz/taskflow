@@ -1,7 +1,7 @@
-import { createSampleTasks } from "@/data/sample-tasks";
+import { removeLegacySampleTasks } from "@/data/legacy-sample-tasks";
 import {
   TaskRepositoryError,
-  type ResettableTaskRepository,
+  type TaskRepository,
   type TaskRepositoryListener,
   type Unsubscribe,
 } from "@/data/task-repository";
@@ -23,7 +23,6 @@ interface StoredTasks {
 export interface LocalTaskRepositoryOptions {
   storage?: Storage | null;
   now?: () => Date;
-  createSeedTasks?: (now: Date) => Task[];
 }
 
 function cloneTasks(tasks: readonly Task[]): Task[] {
@@ -141,10 +140,9 @@ function normalizeTime(value: string | null | undefined): string | null {
   return value;
 }
 
-export class LocalTaskRepository implements ResettableTaskRepository {
+export class LocalTaskRepository implements TaskRepository {
   private readonly listeners = new Set<TaskRepositoryListener>();
   private readonly now: () => Date;
-  private readonly createSeedTasks: (now: Date) => Task[];
   private readonly storageOverride: Storage | null | undefined;
   private volatileTasks: Task[] | null = null;
   private isListeningForStorage = false;
@@ -152,7 +150,6 @@ export class LocalTaskRepository implements ResettableTaskRepository {
   constructor(options: LocalTaskRepositoryOptions = {}) {
     this.storageOverride = options.storage;
     this.now = options.now ?? (() => new Date());
-    this.createSeedTasks = options.createSeedTasks ?? createSampleTasks;
   }
 
   async getTasks(): Promise<Task[]> {
@@ -173,7 +170,7 @@ export class LocalTaskRepository implements ResettableTaskRepository {
           const raw = storage.getItem(key);
           if (raw === null) continue;
           const parsed = parseStoredTasks(raw);
-          if (parsed) return cloneTasks(parsed);
+          if (parsed) return removeLegacySampleTasks(parsed);
         }
       } catch {
         // Fall through to the session copy when browser storage is blocked.
@@ -291,13 +288,6 @@ export class LocalTaskRepository implements ResettableTaskRepository {
     this.notify(nextTasks);
   }
 
-  async resetToSampleTasks(): Promise<Task[]> {
-    const tasks = this.createSeedTasks(this.now());
-    this.writeTasks(tasks);
-    this.notify(tasks);
-    return cloneTasks(tasks);
-  }
-
   subscribe(listener: TaskRepositoryListener): Unsubscribe {
     this.listeners.add(listener);
     this.startStorageListener();
@@ -331,8 +321,10 @@ export class LocalTaskRepository implements ResettableTaskRepository {
         if (raw !== null) {
           const parsed = parseStoredTasks(raw);
           if (parsed) {
-            this.volatileTasks = parsed;
-            return cloneTasks(parsed);
+            const tasks = removeLegacySampleTasks(parsed);
+            if (tasks.length !== parsed.length) this.writeTasks(tasks);
+            this.volatileTasks = tasks;
+            return cloneTasks(tasks);
           }
         }
 
@@ -342,14 +334,15 @@ export class LocalTaskRepository implements ResettableTaskRepository {
 
           const parsed = parseStoredTasks(legacyRaw);
           if (!parsed) continue;
+          const tasks = removeLegacySampleTasks(parsed);
 
           // Keep the legacy entry when persistence is blocked so migration can
           // be retried safely on a later visit.
-          if (this.writeTasks(parsed)) {
+          if (this.writeTasks(tasks)) {
             storage.removeItem(legacyKey);
           }
 
-          return cloneTasks(parsed);
+          return cloneTasks(tasks);
         }
       } catch {
         // Fall back to the in-memory copy when browser storage is unavailable.
@@ -360,9 +353,8 @@ export class LocalTaskRepository implements ResettableTaskRepository {
       return cloneTasks(this.volatileTasks);
     }
 
-    const seeded = this.createSeedTasks(this.now());
-    this.writeTasks(seeded);
-    return cloneTasks(seeded);
+    this.writeTasks([]);
+    return [];
   }
 
   private writeTasks(tasks: readonly Task[]): boolean {
@@ -428,4 +420,4 @@ export class LocalTaskRepository implements ResettableTaskRepository {
 }
 
 export const localTaskRepository = new LocalTaskRepository();
-export const taskRepository: ResettableTaskRepository = localTaskRepository;
+export const taskRepository: TaskRepository = localTaskRepository;
