@@ -8,7 +8,7 @@ No Electron, npm server, additional Python packages, or sudo required.
 From the TaskFlow checkout, with the same public Supabase configuration as the web app in `.env.local`:
 
 ```bash
-python3 desktop/kde-widget/install.py --web-url https://YOUR-TASKFLOW-WEBSITE
+python3 desktop/kde-widget/install.py --web-url https://taskflow-ruddy-one.vercel.app/
 ```
 
 `--web-url` is optional; you can enter the deployed website URL in the widget's settings.

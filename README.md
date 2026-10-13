@@ -212,7 +212,7 @@ A Python standard-library companion starts with your graphical session and polls
 Supabase every 30 seconds; no browser window or Next.js server needs to stay open.
 
 ```bash
-python3 desktop/kde-widget/install.py --web-url https://YOUR-TASKFLOW-WEBSITE
+python3 desktop/kde-widget/install.py --web-url https://taskflow-ruddy-one.vercel.app/
 ```
 
 Add **TaskFlow** from KDE's **Add Widgets** menu and sign in with your existing account.
