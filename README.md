@@ -203,6 +203,25 @@ V1 includes the complete local task workflow, reusable Saved Courses, email/pass
 
 Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, calendar integrations, analytics, AI features, push notifications, and guaranteed offline loading remain out of scope.
 
+## KDE desktop widget
+
+TaskFlow also includes an optional Plasma 6 desktop/panel widget for Fedora KDE.
+It shows unfinished tasks, deadline countdowns, and today's task count, supports
+completion from the desktop, and sends reminders one hour before deadlines.
+A Python standard-library companion starts with your graphical session and polls
+Supabase every 30 seconds; no browser window or Next.js server needs to stay open.
+
+```bash
+python3 desktop/kde-widget/install.py --web-url https://YOUR-TASKFLOW-WEBSITE
+```
+
+Add **TaskFlow** from KDE's **Add Widgets** menu and sign in with your existing account.
+Guest tasks must first be moved to cloud through the website. Local private files store
+this widget's session and last fetched tasks; the widget does not store your password.
+
+See [desktop/kde-widget/README.md](desktop/kde-widget/README.md) for installation,
+privacy boundaries, offline behavior, testing, notifications, and uninstall instructions.
+
 ## Future roadmap
 
 1. Add password reset/change flows and optional OAuth providers.

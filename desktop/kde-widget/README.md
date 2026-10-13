@@ -1,0 +1,97 @@
+# TaskFlow KDE widget
+
+A Plasma 6 widget for the desktop or panel, backed by a small Python companion.
+No Electron, npm server, additional Python packages, or sudo required.
+
+## Install on Fedora KDE / Plasma 6
+
+From the TaskFlow checkout, with the same public Supabase configuration as the web app in `.env.local`:
+
+```bash
+python3 desktop/kde-widget/install.py --web-url https://YOUR-TASKFLOW-WEBSITE
+```
+
+`--web-url` is optional; you can enter the deployed website URL in the widget's settings.
+The installer reads only public Supabase URL/publishable key (legacy anon key also supported).
+It never executes `.env.local` as a shell script. Environment variables can also supply these values.
+Do not supply a service-role or secret key.
+
+Right-click the desktop or panel → **Add Widgets** → search **TaskFlow** → add it.
+Sign in inside the widget with your existing TaskFlow email/password. Accounts must already
+exist; create/confirm them on the website. The widget has its own session; the website can stay closed.
+Guest browser tasks are not accessible here: move them to your cloud account through the web app first.
+
+To open a standalone preview window:
+
+```bash
+plasmawindowed com.github.micosz.taskflow
+```
+
+## Everyday use
+
+- All unfinished, Today, Next 7 days, and Overdue views, with English/Thai switching.
+- Due-date countdowns and completion buttons. Completion updates the existing Supabase row;
+  the web app receives the change through its existing Realtime subscription.
+- Desktop display updates about every 30 seconds. This companion uses polling, not Realtime.
+  Manual refresh queries immediately. A slow network can delay updates beyond that interval.
+- A panel icon shows the count of unfinished tasks due today; click to open its popup.
+- Last successful cloud snapshot remains visible when offline; completion is disabled offline.
+  No offline mutation queue. Auth rejection clears the session and cache.
+- Desktop notifications start one hour before each deadline, once per task/deadline/account.
+  Date-only tasks are due at 23:59:59 local time, matching the web app. After sleep, deadlines
+  missed by up to five minutes can still notify; older overdue tasks only appear in the list.
+  The computer must be awake, connected, and signed in; KDE Do Not Disturb can suppress banners.
+- **Open web** opens your configured TaskFlow homepage to view/edit full details.
+- Sign out in settings to erase the widget's local session, tasks, and reminder history.
+  Website/mobile sessions are independent.
+
+The companion starts automatically with your graphical session, even when the popup is closed.
+To disable notifications, rerun installation with `--no-notifications`. Rerunning installation
+updates the installed files and preserves your account; changing Supabase projects clears it.
+Close/reopen an existing widget after an update to reload its QML.
+
+## Local files and security boundary
+
+- `~/.local/share/taskflow-widget/bridge.py`: installed Python companion.
+- `~/.local/share/plasma/plasmoids/com.github.micosz.taskflow/`: installed widget.
+- `~/.config/taskflow-widget/config.json`: public cloud configuration and random local API secret.
+- `~/.local/state/taskflow-widget/session.json`: access/refresh tokens, cached tasks and reminder history.
+- `~/.config/systemd/user/taskflow-widget.service`: user service.
+
+XDG overrides are respected. Session/config files use mode `0600`; the widget directory uses
+`0700` because its generated `connection.js` contains a per-install local API credential.
+The password is sent to Supabase over HTTPS and is never stored. Tokens are stored in a private
+file, not an encrypted keyring; software running as your Unix user can read them. Do not share
+the generated installed widget folder or account state, and do not commit these files.
+
+The companion binds only to `127.0.0.1:38471`, requires its random bearer credential for every
+endpoint, rejects browser Origin headers and unexpected Host headers, and exposes no CORS access.
+It sends the signed-in user's bearer token to Supabase, where the existing task RLS policies
+remain authoritative. Tokens never appear in widget responses or request logs.
+
+## Troubleshoot / remove
+
+```bash
+systemctl --user status taskflow-widget.service
+systemctl --user restart taskflow-widget.service
+journalctl --user -u taskflow-widget.service -n 30
+python3 desktop/kde-widget/install.py --uninstall
+# Also erase this widget's local login/cache/config:
+python3 desktop/kde-widget/install.py --uninstall --purge
+```
+
+Remove its desktop/panel tile through KDE. Neither uninstall option deletes cloud tasks.
+If port 38471 is occupied, change `port` in the private config and rerun installation.
+If Supabase requires CAPTCHA/MFA, this initial email/password-only widget cannot complete that
+flow; use the website until an interactive auth flow is added.
+
+## Verification
+
+```bash
+python3 -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
+```
+
+Tests use a fake cloud and check scope isolation, token rotation, cache clearing, completion,
+notification deduplication, date-only deadlines, and loopback API authorization.
+Live account login/cloud sync should be checked with an actual user account; automated tests
+do not establish deployed Supabase behavior.
