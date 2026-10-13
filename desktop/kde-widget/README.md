@@ -48,7 +48,29 @@ plasmawindowed com.github.micosz.taskflow
 The companion starts automatically with your graphical session, even when the popup is closed.
 To disable notifications, rerun installation with `--no-notifications`. Rerunning installation
 updates the installed files and preserves your account; changing Supabase projects clears it.
-Close/reopen an existing widget after an update to reload its QML.
+After a QML update, log out/in or restart `plasma-plasmashell.service` to clear Plasma's component cache. Closing/reopening a tile can reuse the old cached QML.
+
+## Appearance
+
+The widget follows TaskFlow's sage palette and wordmark, with clear task/category/deadline
+hierarchy and an outlined completion button. The settings button contains language,
+System/Dark/Light theme, frosted-background, and reduced-motion preferences. These are
+stored per widget, alongside your existing website URL and filter selection.
+
+On the desktop, frosted mode samples only the wallpaper behind this widget using Qt Quick's
+`ShaderEffectSource` and `MultiEffect`. A rounded mask, half-resolution texture, restrained
+blur, and readable tint give actual frosted glass without changing your Plasma theme or
+KWin configuration. Moving the tile updates the sampled wallpaper area. This does not take
+or save screenshots, and does not sample your application windows or desktop icons.
+
+Disable **Frosted background** for a fully opaque surface. Missing wallpaper sources,
+software rendering, standalone previews, and panel popups also use the opaque fallback.
+Text colors are calibrated for both modes, including bright wallpaper behind dark mode.
+
+Press feedback is limited to 120 ms and pointer input. Keyboard actions are immediate;
+**Reduce motion** and KDE's disabled animation setting remove movement. Polling and filter
+changes never replay entry animations. Loading, empty, login, settings, offline, and error
+states use the same design; settings/login remain scrollable at the minimum tile size.
 
 ## Local files and security boundary
 
