@@ -14,6 +14,7 @@ from bridge import save_private
 
 
 PLUGIN = "com.github.micosz.taskflow"
+CALENDAR_PLUGIN = "com.github.micosz.taskflow.calendar"
 
 
 def read_env(path):
@@ -47,6 +48,7 @@ def main():
     state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
     app = data / "taskflow-widget"
     widget = data / "plasma/plasmoids" / PLUGIN
+    calendar = data / "plasma/plasmoids" / CALENDAR_PLUGIN
     config_path = config_home / "taskflow-widget/config.json"
     unit = config_home / "systemd/user/taskflow-widget.service"
     if not shutil.which("systemctl") or not shutil.which("kpackagetool6"):
@@ -56,6 +58,7 @@ def main():
         unit.unlink(missing_ok=True)
         shutil.rmtree(app, ignore_errors=True)
         shutil.rmtree(widget, ignore_errors=True)
+        shutil.rmtree(calendar, ignore_errors=True)
         if args.purge:
             shutil.rmtree(config_path.parent, ignore_errors=True)
             shutil.rmtree(state_home / "taskflow-widget", ignore_errors=True)
@@ -103,6 +106,12 @@ def main():
                           + json.dumps(f'http://127.0.0.1:{config["port"]}') + ";\nvar token = "
                           + json.dumps(config["token"]) + ";\n")
     os.chmod(connection, 0o600)
+    shutil.copytree(source / "calendar-plasmoid", calendar, dirs_exist_ok=True)
+    os.chmod(calendar, 0o700)
+    for component in ("WidgetTheme.qml", "WidgetButton.qml", "WidgetField.qml"):
+        shutil.copy2(source / "plasmoid/contents/ui" / component, calendar / "contents/ui" / component)
+    shutil.copy2(connection, calendar / "contents/ui/connection.js")
+    os.chmod(calendar / "contents/ui/connection.js", 0o600)
     unit.parent.mkdir(parents=True, exist_ok=True)
     unit.write_text("[Unit]\nDescription=TaskFlow desktop widget companion\n"
                     "After=graphical-session.target\nPartOf=graphical-session.target\n\n"
@@ -115,6 +124,7 @@ def main():
     subprocess.run(["systemctl", "--user", "restart", "taskflow-widget.service"], check=True)
     print("Installed TaskFlow. Right-click desktop/panel → Add Widgets → TaskFlow.")
     print("Sign in inside the widget with your existing TaskFlow email/password.")
+    print("Calendar: Add Widgets → TaskFlow Calendar (same account/companion).")
     print("Preview: plasmawindowed " + PLUGIN)
 
 

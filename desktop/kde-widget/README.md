@@ -117,3 +117,15 @@ Tests use a fake cloud and check scope isolation, token rotation, cache clearing
 notification deduplication, date-only deadlines, and loopback API authorization.
 Live account login/cloud sync should be checked with an actual user account; automated tests
 do not establish deployed Supabase behavior.
+
+## Separate calendar widget
+
+The installer also registers **TaskFlow Calendar** (`com.github.micosz.taskflow.calendar`).
+Add it through KDE's Add Widgets menu. It shares the existing loopback companion,
+login, offline cache, and 30-second refresh; no extra service or browser is needed.
+
+Browse months, jump to today, and select a date to view unfinished scheduled tasks,
+notes, and due times. Completed tasks and undated Todo are not part of this calendar.
+The calendar uses an opaque surface, supports Thai/English and light/dark/system themes,
+and does not apply the main widget's frosted wallpaper effect. Both packages are removed
+by the existing uninstall command.

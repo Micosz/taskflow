@@ -1,0 +1,15 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "com.github.micosz.taskflow.calendar",
+    "Name": "TaskFlow Calendar",
+    "Name[th]": "ปฏิทิน TaskFlow",
+    "Description": "Scheduled TaskFlow work, month by month",
+    "Icon": "view-calendar",
+    "Category": "Date and Time",
+    "Authors": [{"Name": "Micosz"}],
+    "Version": "0.1.0",
+    "Website": "https://github.com/Micosz/taskflow"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0"
+}
