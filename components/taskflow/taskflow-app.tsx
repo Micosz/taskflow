@@ -47,6 +47,7 @@ import { TaskDetailDialog } from "./task-detail-dialog";
 import { TaskList } from "./task-list";
 import { TaskCalendar } from "./task-calendar";
 import { Toast, type ToastMessage } from "./toast";
+import { TodoPanel } from "./todo-panel";
 import { ViewSwitcher } from "./view-switcher";
 
 export function TaskFlowApp() {
@@ -76,6 +77,7 @@ export function TaskFlowApp() {
   const [uiScopeKey, setUiScopeKey] = useState(repositorySelection.scopeKey);
   const [selectedView, setSelectedView] = useState<TaskView>(DEFAULT_TASK_VIEW);
   const [selectedSearchQuery, setSelectedSearchQuery] = useState("");
+  const [section, setSection] = useState<"tasks" | "todo">("tasks");
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -398,6 +400,7 @@ export function TaskFlowApp() {
   };
 
   const handleViewChange = useCallback((nextView: TaskView) => {
+    setSection("tasks");
     activateUiScope();
     setSelectedView(nextView);
     setPreviewTaskId(null);
@@ -448,12 +451,14 @@ export function TaskFlowApp() {
           messages={messages}
           locale={locale}
           activeView={view}
+          todoActive={section === "todo"}
+          onTodo={() => setSection("todo")}
           counts={counts}
           searchQuery={searchQuery}
           onViewChange={handleViewChange}
           onSearchChange={handleSearchChange}
           onLocaleChange={handleLocaleChange}
-          onAdd={openCreate}
+          onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : openCreate}
           onSettings={() => setSettingsOpen(true)}
           onAccount={() =>
             repositorySelection.mode === "cloud"
@@ -471,6 +476,9 @@ export function TaskFlowApp() {
           tabIndex={-1}
           className="app-main min-w-0 pb-28 pt-5 sm:pt-7 lg:pb-0 lg:pt-0"
         >
+          {section === "todo" ? <TodoPanel key={repositorySelection.scopeKey}
+            userId={authenticatedUserId} client={auth.client} enabled={auth.isInitialized}
+            locale={locale} messages={messages} onLocaleChange={handleLocaleChange} onSettings={() => setSettingsOpen(true)} /> : <>
           {now ? (
             <DashboardHeader
               messages={messages}
@@ -565,6 +573,7 @@ export function TaskFlowApp() {
               </motion.div>
             </AnimatePresence>
           )}
+          </>}
         </main>
       </div>
 
@@ -572,9 +581,11 @@ export function TaskFlowApp() {
         messages={messages}
         locale={locale}
         activeView={view}
+        todoActive={section === "todo"}
+        onTodo={() => setSection("todo")}
         counts={counts}
         onViewChange={handleViewChange}
-        onAdd={openCreate}
+        onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : openCreate}
       />
 
       <TaskFormDialog

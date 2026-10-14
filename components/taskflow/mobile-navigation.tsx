@@ -27,6 +27,8 @@ export interface MobileNavigationProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  todoActive: boolean;
+  onTodo: () => void;
   counts: Record<TaskView, number>;
   onViewChange: (view: TaskView) => void;
   onAdd: () => void;
@@ -37,6 +39,8 @@ export function MobileNavigation({
   messages,
   locale,
   activeView,
+  todoActive,
+  onTodo,
   counts,
   onViewChange,
   onAdd,
@@ -45,7 +49,7 @@ export function MobileNavigation({
   const shouldReduceMotion = useReducedMotion();
 
   const renderItem = ({ view, label, icon: Icon }: MobileNavigationItem) => {
-    const selected = activeView === view;
+    const selected = !todoActive && activeView === view;
 
     return (
       <motion.button
@@ -88,13 +92,13 @@ export function MobileNavigation({
       aria-label={messages.accessibility.mobileNavigation}
       className={`fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.09] bg-[#090b0a]/94 px-[max(0.5rem,env(safe-area-inset-left))] pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_55px_rgba(0,0,0,0.5)] backdrop-blur-2xl lg:hidden ${className}`}
     >
-      <div className="mx-auto grid max-w-xl grid-cols-5 items-end gap-0.5">
+      <div className="mx-auto grid max-w-xl grid-cols-6 items-end gap-0.5">
         {leadingItems.map(renderItem)}
 
         <div className="relative flex min-h-14 items-center justify-center">
           <motion.button
             type="button"
-            aria-label={messages.header.addTask}
+            aria-label={todoActive ? messages.todo.add : messages.header.addTask}
             className="absolute -top-6 grid size-15 place-items-center rounded-xl border border-[#b7c3ac]/25 bg-[#899781] text-white shadow-[0_14px_30px_rgba(0,0,0,0.42),0_0_0_5px_rgba(9,11,10,0.92)] outline-none focus-visible:ring-2 focus-visible:ring-[#b7c3ac] focus-visible:ring-offset-4 focus-visible:ring-offset-[#090b0a]"
             onClick={onAdd}
             whileHover={shouldReduceMotion ? undefined : { y: -2, rotate: -2 }}
@@ -103,11 +107,12 @@ export function MobileNavigation({
             <Plus aria-hidden="true" className="size-6" strokeWidth={2.4} />
           </motion.button>
           <span className="mt-auto truncate pb-1 text-[0.6rem] font-medium text-[#b7c3ac]">
-            {messages.header.addTask}
+            {todoActive ? messages.todo.add : messages.header.addTask}
           </span>
         </div>
 
         {trailingItems.map(renderItem)}
+        <button type="button" onClick={onTodo} aria-current={todoActive ? "page" : undefined} className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl text-[0.62rem] ${todoActive ? "text-[#b7c3ac] bg-white/5" : "text-[#b4bdb0]"}`}><ListTodo size={20} aria-hidden="true" />{messages.todo.title}</button>
       </div>
     </nav>
   );

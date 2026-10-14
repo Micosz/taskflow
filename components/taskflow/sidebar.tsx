@@ -27,6 +27,8 @@ export interface SidebarProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  todoActive: boolean;
+  onTodo: () => void;
   counts: Record<TaskView, number>;
   searchQuery: string;
   onViewChange: (view: TaskView) => void;
@@ -45,6 +47,8 @@ export function Sidebar({
   messages,
   locale,
   activeView,
+  todoActive,
+  onTodo,
   counts,
   searchQuery,
   onViewChange,
@@ -73,7 +77,7 @@ export function Sidebar({
 
       <nav aria-label={messages.accessibility.desktopNavigation} className="editorial-topbar__nav">
         {navigationItems.map(({ view, label }) => {
-          const selected = view === activeView;
+          const selected = !todoActive && view === activeView;
           const isAlert = view === "overdue" && counts.overdue > 0;
 
           return (
@@ -94,9 +98,10 @@ export function Sidebar({
             </motion.button>
           );
         })}
+        <button type="button" className="editorial-nav-link" data-active={todoActive || undefined} aria-current={todoActive ? "page" : undefined} onClick={onTodo}>{messages.todo.title}</button>
       </nav>
 
-      <label className="editorial-search editorial-topbar__search">
+      <label className="editorial-search editorial-topbar__search" hidden={todoActive}>
         <span className="sr-only">{messages.header.searchLabel}</span>
         <Search aria-hidden="true" size={18} strokeWidth={1.45} />
         <input
@@ -125,7 +130,7 @@ export function Sidebar({
           whileTap={reduceMotion ? undefined : { scale: 0.98 }}
         >
           <Plus aria-hidden="true" size={18} strokeWidth={1.6} />
-          <span>{messages.header.addTask}</span>
+          <span>{todoActive ? messages.todo.add : messages.header.addTask}</span>
         </motion.button>
 
         <button

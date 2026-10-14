@@ -203,6 +203,17 @@ V1 includes the complete local task workflow, reusable Saved Courses, email/pass
 
 Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, calendar integrations, analytics, AI features, push notifications, and guaranteed offline loading remain out of scope.
 
+## Undated Todo
+
+The separate **Todo** menu stores reminders without a due date or time. Add, edit,
+complete, reopen, search, and delete items independently of scheduled tasks and calendars.
+Guest items stay on this device under a separate storage key. Signed-in items use the
+private `todos` table and owner-authorized Realtime channels.
+
+Apply `supabase/migrations/202610140001_create_todos.sql` before enabling cloud Todo.
+Moving guest Todo into an account requires an explicit import; retries are idempotent,
+and source items are cleared only after verification. Guest edits made during import remain.
+
 ## KDE desktop widget
 
 TaskFlow also includes an optional Plasma 6 desktop/panel widget for Fedora KDE.
@@ -215,7 +226,10 @@ Supabase every 30 seconds; no browser window or Next.js server needs to stay ope
 python3 desktop/kde-widget/install.py --web-url https://taskflow-ruddy-one.vercel.app/
 ```
 
-Add **TaskFlow** from KDE's **Add Widgets** menu and sign in with your existing account.
+Add **TaskFlow** or **TaskFlow Calendar** from KDE's **Add Widgets** menu and sign in with your existing account.
+The calendar uses a solid background and shows unfinished scheduled tasks by date,
+with notes and deadline times for the selected day. Both widgets share one companion
+and session; undated Todo remains in the website's separate menu.
 Guest tasks must first be moved to cloud through the website. Local private files store
 this widget's session and last fetched tasks; the widget does not store your password.
 
