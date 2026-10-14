@@ -22,7 +22,7 @@ PlasmoidItem {
     WidgetTheme {
         id: design
         dark: Plasmoid.configuration.themeMode === "dark" || (Plasmoid.configuration.themeMode === "system" && Kirigami.Theme.backgroundColor.r < 0.5)
-        glass: false
+        glass: Plasmoid.configuration.glass
         reduceMotion: true
     }
     function tr(th, en) { return thai ? th : en; }
@@ -68,13 +68,17 @@ PlasmoidItem {
         Kirigami.Icon { anchors.fill: parent; source: "view-calendar"; color: design.accent }
         MouseArea { anchors.fill: parent; onClicked: root.expanded = !root.expanded }
     }
-    fullRepresentation: Rectangle {
+    fullRepresentation: Item {
         id: calendarPanel
         Layout.minimumWidth: 310; Layout.minimumHeight: 450
         Layout.preferredWidth: 380; Layout.preferredHeight: 580
         implicitWidth: 380; implicitHeight: 580
-        radius: design.panelRadius; color: design.surface
-        border.width: 1; border.color: design.edge
+        GlassSurface {
+            anchors.fill: parent
+            theme: design
+            wallpaper: Plasmoid.formFactor === PlasmaCore.Types.Planar && Plasmoid.containment
+                ? Plasmoid.containment.wallpaperGraphicsObject : null
+        }
         ColumnLayout {
             anchors.fill: parent; anchors.margins: 16; spacing: 10
             RowLayout {

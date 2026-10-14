@@ -108,7 +108,7 @@ def main():
     os.chmod(connection, 0o600)
     shutil.copytree(source / "calendar-plasmoid", calendar, dirs_exist_ok=True)
     os.chmod(calendar, 0o700)
-    for component in ("WidgetTheme.qml", "WidgetButton.qml", "WidgetField.qml"):
+    for component in ("WidgetTheme.qml", "WidgetButton.qml", "WidgetField.qml", "GlassSurface.qml"):
         shutil.copy2(source / "plasmoid/contents/ui" / component, calendar / "contents/ui" / component)
     shutil.copy2(connection, calendar / "contents/ui/connection.js")
     os.chmod(calendar / "contents/ui/connection.js", 0o600)

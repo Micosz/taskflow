@@ -227,7 +227,7 @@ python3 desktop/kde-widget/install.py --web-url https://taskflow-ruddy-one.verce
 ```
 
 Add **TaskFlow** or **TaskFlow Calendar** from KDE's **Add Widgets** menu and sign in with your existing account.
-The calendar uses a solid background and shows unfinished scheduled tasks by date,
+The calendar uses the same frosted wallpaper background as the task widget and shows unfinished scheduled tasks by date,
 with notes and deadline times for the selected day. Both widgets share one companion
 and session; undated Todo remains in the website's separate menu.
 Guest tasks must first be moved to cloud through the website. Local private files store

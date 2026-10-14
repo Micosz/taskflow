@@ -126,6 +126,7 @@ login, offline cache, and 30-second refresh; no extra service or browser is need
 
 Browse months, jump to today, and select a date to view unfinished scheduled tasks,
 notes, and due times. Completed tasks and undated Todo are not part of this calendar.
-The calendar uses an opaque surface, supports Thai/English and light/dark/system themes,
-and does not apply the main widget's frosted wallpaper effect. Both packages are removed
+The calendar shares the main widget's frosted wallpaper surface and supports Thai/English
+and light/dark/system themes. Blur falls back to an opaque surface in panel popups or
+software rendering. The calendar's `glass` setting can disable the effect. Both packages are removed
 by the existing uninstall command.
