@@ -1,6 +1,7 @@
 """Contract checks with a fake cloud; no real accounts or mutations."""
 import datetime as dt
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -28,6 +29,11 @@ class BridgeTests(unittest.TestCase):
                         "user": {"id": "owner", "email": "owner@example.org"}}
         self.workspace.accept_session(self.session)
 
+    def test_utf8_cache_roundtrip(self):
+        self.workspace.tasks = [dict(TASK, title="ทำรายงานภาษาไทย 📝", description="ทบทวนก่อนส่ง")]
+        self.workspace.persist()
+        self.assertEqual(Workspace(self.workspace.config, self.directory).tasks, self.workspace.tasks)
+
     def test_refresh_rotates_and_persists_before_fetch(self):
         self.workspace.session["expires_at"] = time.time() - 1
         requests = []
@@ -43,7 +49,8 @@ class BridgeTests(unittest.TestCase):
         self.assertTrue(state["online"])
         self.assertIn("user_id=eq.owner", requests[-1])
         self.assertNotIn("access_token", json.dumps(state))
-        self.assertEqual(self.workspace.path.stat().st_mode & 0o777, 0o600)
+        if os.name != "nt":
+            self.assertEqual(self.workspace.path.stat().st_mode & 0o777, 0o600)
 
     def test_offline_cache_survives_but_invalid_auth_clears(self):
         self.workspace.tasks = [TASK]

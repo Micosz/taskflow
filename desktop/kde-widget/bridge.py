@@ -27,7 +27,7 @@ def save_private(path, value):
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     temporary = path.with_suffix(".tmp")
     fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w") as stream:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False)
     os.chmod(temporary, 0o600)
     temporary.replace(path)
@@ -55,7 +55,7 @@ class Workspace:
         self.last_sync = None
         self.online = False
         if self.path.exists():
-            data = json.loads(self.path.read_text())
+            data = json.loads(self.path.read_text(encoding="utf-8"))
             self.session = data.get("session")
             self.tasks = data.get("tasks", []) if self.session else []
             self.notified = set(data.get("notified", [])) if self.session else set()
@@ -311,7 +311,7 @@ def main():
     default = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "taskflow-widget"
     parser.add_argument("--config", type=Path, default=default / "config.json")
     args = parser.parse_args()
-    config = json.loads(args.config.read_text())
+    config = json.loads(args.config.read_text(encoding="utf-8"))
     url = urllib.parse.urlparse(config["url"])
     if url.scheme != "https" or not url.netloc or url.username or url.password or url.query or url.fragment:
         parser.error("Supabase URL must be an HTTPS origin")

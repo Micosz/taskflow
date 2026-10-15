@@ -1,0 +1,59 @@
+name: Build desktop release
+on:
+  push:
+    tags: ['v1.*']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download release public configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ${{ github.ref_name }} --pattern public-config.json --dir desktop/release
+      - run: python -m pip install pyinstaller==6.16.0
+      - name: Test shared bridge
+        run: python -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
+      - name: Build executable
+        run: python -m PyInstaller --noconfirm --onefile --windowed --name TaskFlowWidget --paths desktop/kde-widget --add-data "desktop/release/public-config.json;." desktop/release/portable.py
+      - name: Smoke test and package
+        shell: pwsh
+        run: |
+          $proc = Start-Process dist/TaskFlowWidget.exe -ArgumentList '--smoke-test' -PassThru
+          if (-not $proc.WaitForExit(30000)) { $proc.Kill(); throw 'Widget smoke test timed out' }
+          if ($proc.ExitCode -ne 0) { throw 'Widget smoke test failed' }
+          Copy-Item desktop/release/Install.cmd,desktop/release/Uninstall.cmd dist/
+          Copy-Item desktop/release/RELEASE-README.md dist/README.md
+          Compress-Archive -Path dist/TaskFlowWidget.exe,dist/Install.cmd,dist/Uninstall.cmd,dist/README.md -DestinationPath TaskFlow-Widgets-1.0.0-Windows-x64.zip
+          $hash = (Get-FileHash TaskFlow-Widgets-1.0.0-Windows-x64.zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  TaskFlow-Widgets-1.0.0-Windows-x64.zip" | Out-File -Encoding ascii SHA256SUMS-Windows.txt
+      - name: Upload Windows files to draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ github.ref_name }} TaskFlow-Widgets-1.0.0-Windows-x64.zip SHA256SUMS-Windows.txt
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Tk smoke test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+      - name: Download release public configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ${{ github.ref_name }} --pattern public-config.json --dir desktop/release
+      - name: Test shared bridge and packaging
+        run: python -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
+      - name: Test release contracts
+        run: python -m unittest discover -s desktop/release -p 'test_*.py' -v
+      - name: Smoke test portable windows
+        run: xvfb-run -a python desktop/release/portable.py --smoke-test

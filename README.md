@@ -250,3 +250,15 @@ privacy boundaries, offline behavior, testing, notifications, and uninstall inst
 - Email delivery and confirmation behavior depend on the Supabase Auth settings and SMTP limits of the project.
 - The new `202609040001_add_task_migration_key.sql` migration must be applied before local-to-cloud migration can succeed.
 - The new `202609040002_create_courses.sql` migration must be applied before cloud Saved Courses, course migration, or course Realtime can work.
+
+## Reinstallable desktop release
+
+[Release 1](https://github.com/Micosz/taskflow/releases/tag/v1.0.0) provides a Linux
+installer (Plasma 6 native widgets or portable GNOME/other-desktop windows) and
+a Windows 10/11 x64 executable. After an OS reinstall, download, install, and log
+in to the same account to recover synced tasks. See
+[the release guide](desktop/release/RELEASE-README.md) for Ubuntu/Debian and
+Fedora/RHEL dependencies, preference export/restore, uninstall, and platform limits.
+
+The portable Windows/GNOME windows have opaque surfaces and no deadline
+notifications in Release 1. KDE retains its existing glass and reminders.
