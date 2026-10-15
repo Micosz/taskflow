@@ -1,3 +1,6 @@
+> Historical QA from earlier UI revisions. Paths, fixtures and test counts below
+> describe those revisions; they are not the current acceptance checklist.
+
 # Design QA — Layout Polish
 
 ## Comparison Target
