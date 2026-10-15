@@ -203,6 +203,39 @@ V1 includes the complete local task workflow, reusable Saved Courses, email/pass
 
 Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, calendar integrations, analytics, AI features, push notifications, and guaranteed offline loading remain out of scope.
 
+## Undated Todo
+
+The separate **Todo** menu stores reminders without a due date or time. Add, edit,
+complete, reopen, search, and delete items independently of scheduled tasks and calendars.
+Guest items stay on this device under a separate storage key. Signed-in items use the
+private `todos` table and owner-authorized Realtime channels.
+
+Apply `supabase/migrations/202610140001_create_todos.sql` before enabling cloud Todo.
+Moving guest Todo into an account requires an explicit import; retries are idempotent,
+and source items are cleared only after verification. Guest edits made during import remain.
+
+## KDE desktop widget
+
+TaskFlow also includes an optional Plasma 6 desktop/panel widget for Fedora KDE.
+It shows unfinished tasks, deadline countdowns, and today's task count, supports
+completion from the desktop, and sends reminders one hour before deadlines.
+A Python standard-library companion starts with your graphical session and polls
+Supabase every 30 seconds; no browser window or Next.js server needs to stay open.
+
+```bash
+python3 desktop/kde-widget/install.py --web-url https://taskflow-ruddy-one.vercel.app/
+```
+
+Add **TaskFlow** or **TaskFlow Calendar** from KDE's **Add Widgets** menu and sign in with your existing account.
+The calendar uses the same frosted wallpaper background as the task widget and shows unfinished scheduled tasks by date,
+with notes and deadline times for the selected day. Both widgets share one companion
+and session; undated Todo remains in the website's separate menu.
+Guest tasks must first be moved to cloud through the website. Local private files store
+this widget's session and last fetched tasks; the widget does not store your password.
+
+See [desktop/kde-widget/README.md](desktop/kde-widget/README.md) for installation,
+privacy boundaries, offline behavior, testing, notifications, and uninstall instructions.
+
 ## Future roadmap
 
 1. Add password reset/change flows and optional OAuth providers.
@@ -217,3 +250,15 @@ Google OAuth, password-reset UI, collaboration, recurring tasks, attachments, ca
 - Email delivery and confirmation behavior depend on the Supabase Auth settings and SMTP limits of the project.
 - The new `202609040001_add_task_migration_key.sql` migration must be applied before local-to-cloud migration can succeed.
 - The new `202609040002_create_courses.sql` migration must be applied before cloud Saved Courses, course migration, or course Realtime can work.
+
+## Reinstallable desktop release
+
+[Release 1](https://github.com/Micosz/taskflow/releases/tag/v1.0.0) provides a Linux
+installer (Plasma 6 native widgets or portable GNOME/other-desktop windows) and
+a Windows 10/11 x64 executable. After an OS reinstall, download, install, and log
+in to the same account to recover synced tasks. See
+[the release guide](desktop/release/RELEASE-README.md) for Ubuntu/Debian and
+Fedora/RHEL dependencies, preference export/restore, uninstall, and platform limits.
+
+The portable Windows/GNOME windows have opaque surfaces and no deadline
+notifications in Release 1. KDE retains its existing glass and reminders.

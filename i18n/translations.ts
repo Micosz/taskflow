@@ -5,6 +5,32 @@ type StringShape<T> = {
 };
 
 const english = {
+  todo: {
+    "title": "Todo",
+    "subtitle": "A place for small reminders. No dates, no deadlines.",
+    "remaining": "To do: {count}",
+    "inputLabel": "What do you want to remember?",
+    "placeholder": "For example, buy a charging cable",
+    "add": "Add",
+    "search": "Search Todo",
+    "loading": "Loading Todo",
+    "pending": "Things to do",
+    "completed": "Completed",
+    "empty": "Nothing on your list yet",
+    "emptyHint": "Add a reminder above whenever something comes to mind.",
+    "noResults": "No matching reminders",
+    "searchHint": "Try another search.",
+    "failure": "Could not save or load Todo. Please try again.",
+    "storageError": "Could not read the Todo saved on this device.",
+    "localItems": "Saved on this device: {count} Todo items",
+    "import": "Move Todo to account",
+    "importSuccess": "Todo moved to your account.",
+    "edit": "Edit",
+    "remove": "Delete",
+    "confirmDelete": "Delete this reminder?",
+    "toggle": "Mark or reopen: {title}"
+},
+
   calendar: {
     title: "Calendar & notes",
     subtitle: "All your events, on their due dates.",
@@ -380,6 +406,32 @@ const english = {
 export type TranslationMessages = StringShape<typeof english>;
 
 const thai: TranslationMessages = {
+  todo: {
+    "title": "Todo",
+    "subtitle": "จดสิ่งที่ต้องทำไว้เตือนตัวเอง ไม่ต้องมีวันหรือกำหนดส่ง",
+    "remaining": "เหลือ {count} สิ่งที่ต้องทำ",
+    "inputLabel": "อยากเตือนตัวเองเรื่องอะไร",
+    "placeholder": "เช่น ซื้อสายชาร์จ",
+    "add": "เพิ่ม",
+    "search": "ค้นหา Todo",
+    "loading": "กำลังโหลด Todo",
+    "pending": "สิ่งที่ต้องทำ",
+    "completed": "ทำเสร็จแล้ว",
+    "empty": "ยังไม่มีรายการที่จดไว้",
+    "emptyHint": "นึกอะไรได้ก็เพิ่มไว้ด้านบนได้เลย",
+    "noResults": "ไม่พบรายการที่ค้นหา",
+    "searchHint": "ลองใช้คำค้นหาอื่น",
+    "failure": "บันทึกหรือโหลด Todo ไม่สำเร็จ กรุณาลองอีกครั้ง",
+    "storageError": "อ่าน Todo ที่เก็บในเครื่องไม่ได้",
+    "localItems": "มี Todo {count} รายการที่ยังเก็บในเครื่องนี้",
+    "import": "ย้าย Todo ขึ้นบัญชี",
+    "importSuccess": "ย้าย Todo ขึ้นบัญชีแล้ว",
+    "edit": "แก้ไข",
+    "remove": "ลบ",
+    "confirmDelete": "ลบรายการนี้ไหม",
+    "toggle": "ติ๊กเสร็จหรือเปิดใหม่: {title}"
+},
+
   calendar: {
     title: "ปฏิทินและโน้ต",
     subtitle: "รวมทุก Event ตามวันที่กำหนดไว้",

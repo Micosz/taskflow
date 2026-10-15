@@ -13,6 +13,12 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      todos: {
+        Row: { id: string; user_id: string; title: string; completed: boolean; migration_key: string | null; created_at: string; updated_at: string };
+        Insert: { id?: string; user_id?: string; title: string; completed?: boolean; migration_key?: string | null; created_at?: string; updated_at?: string };
+        Update: { title?: string; completed?: boolean };
+        Relationships: [];
+      };
       courses: {
         Row: {
           code: string | null;
