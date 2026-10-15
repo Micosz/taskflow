@@ -41,6 +41,8 @@ def public_config():
     url = os.getenv("NEXT_PUBLIC_SUPABASE_URL") or env.get("NEXT_PUBLIC_SUPABASE_URL", "")
     key = (os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") or env.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
            or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY") or env.get("NEXT_PUBLIC_SUPABASE_ANON_KEY", ""))
+    if not url and not key:
+        return validate_public(json.loads((ROOT / "desktop/release/public-settings.json").read_text()))
     return validate_public({"url": url.rstrip("/"), "key": key, "web_url": "https://taskflow-ruddy-one.vercel.app/", "notifications": False})
 
 

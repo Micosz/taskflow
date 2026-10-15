@@ -14,10 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Download release public configuration
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release download ${{ github.ref_name }} --pattern public-config.json --dir desktop/release
+      - name: Prepare public app configuration
+        run: python -c "import shutil; shutil.copy2('desktop/release/public-settings.json', 'desktop/release/public-config.json')"
       - run: python -m pip install pyinstaller==6.16.0
       - name: Test shared bridge
         run: python -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
@@ -37,7 +35,7 @@ jobs:
       - name: Upload Windows files to draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} TaskFlow-Widgets-1.0.0-Windows-x64.zip SHA256SUMS-Windows.txt
+        run: gh release upload ${{ github.ref_name }} TaskFlow-Widgets-1.0.0-Windows-x64.zip SHA256SUMS-Windows.txt --clobber
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -47,10 +45,8 @@ jobs:
           python-version: '3.12'
       - name: Install Tk smoke test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
-      - name: Download release public configuration
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release download ${{ github.ref_name }} --pattern public-config.json --dir desktop/release
+      - name: Prepare public app configuration
+        run: python -c "import shutil; shutil.copy2('desktop/release/public-settings.json', 'desktop/release/public-config.json')"
       - name: Test shared bridge and packaging
         run: python -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
       - name: Test release contracts
