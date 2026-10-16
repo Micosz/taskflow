@@ -52,7 +52,8 @@ Project configuration, environment files and dependency manifests stay at the ro
 Desktop Release 1 supports Windows 10/11 x64 and Linux with Python 3.10+.
 Plasma 6 uses native widgets with frosted backgrounds and deadline reminders;
 GNOME/other desktops and Windows use opaque, movable portable windows.
-Desktop clients show unfinished scheduled tasks; undated Todo lives in the web menu.
+The current source also includes a separate Todo widget/window with add, complete
+and reopen actions synced to the web. This is newer than the v1.0.0 desktop archives.
 
 ## Mobile and limitations
 

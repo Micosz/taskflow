@@ -51,6 +51,9 @@ class Workspace:
         self.lock = threading.RLock()
         self.session = None
         self.tasks = []
+        self.todos = []
+        self.todo_online = False
+        self.last_todo_sync = None
         self.notified = set()
         self.last_sync = None
         self.online = False
@@ -58,11 +61,12 @@ class Workspace:
             data = json.loads(self.path.read_text(encoding="utf-8"))
             self.session = data.get("session")
             self.tasks = data.get("tasks", []) if self.session else []
+            self.todos = data.get("todos", []) if self.session else []
             self.notified = set(data.get("notified", [])) if self.session else set()
             self.last_sync = data.get("last_sync") if self.session else None
 
     def persist(self):
-        save_private(self.path, {"session": self.session, "tasks": self.tasks,
+        save_private(self.path, {"session": self.session, "tasks": self.tasks, "todos": self.todos,
                                  "notified": sorted(self.notified),
                                  "last_sync": self.last_sync})
 
@@ -72,7 +76,7 @@ class Workspace:
             if not self.session:
                 raise CloudError("กรุณาเข้าสู่ระบบ", 401)
             headers["Authorization"] = "Bearer " + self.session["access_token"]
-        if method == "PATCH":
+        if method == "PATCH" or (method == "POST" and path.startswith("/rest/")):
             headers["Prefer"] = "return=representation"
         request = urllib.request.Request(
             self.config["url"] + path, headers=headers, method=method,
@@ -95,6 +99,9 @@ class Workspace:
     def clear(self):
         self.session = None
         self.tasks = []
+        self.todos = []
+        self.todo_online = False
+        self.last_todo_sync = None
         self.notified.clear()
         self.last_sync = None
         self.online = False
@@ -186,11 +193,68 @@ class Workspace:
             except CloudError:
                 return self.snapshot()
 
+    def sync_todos(self):
+        # Independent from scheduled work: a Todo outage must not break task reminders.
+        with self.lock:
+            if not self.session:
+                return self.snapshot()
+            try:
+                self.ensure_session()
+                user = self.cloud("GET", "/auth/v1/user")
+                if user["id"] != self.session["user"]["id"]:
+                    self.clear()
+                    raise CloudError("กรุณาเข้าสู่ระบบอีกครั้ง", 401)
+                query = urllib.parse.urlencode({"select": "id,title,completed,created_at,updated_at",
+                    "user_id": "eq." + user["id"], "order": "completed.asc,created_at.desc,id.asc"})
+                todos = []
+                offset = 0
+                while True:
+                    page = self.cloud("GET", f"/rest/v1/todos?{query}&limit=500&offset={offset}")
+                    todos.extend(page)
+                    if len(page) < 500:
+                        break
+                    offset += len(page)
+                self.todos = todos
+                self.todo_online = True
+                self.last_todo_sync = dt.datetime.now().isoformat(timespec="seconds")
+                self.persist()
+            except CloudError as error:
+                self.todo_online = False
+                if error.status in (401, 403):
+                    self.clear()
+                raise
+            return self.snapshot()
+
+    def save_todo(self, title=None, todo_id=None, completed=None):
+        with self.lock:
+            self.ensure_session()
+            owner = self.session["user"]["id"]
+            if todo_id is None:
+                if not isinstance(title, str) or not 1 <= len(title.strip()) <= 240:
+                    raise ValueError("Invalid title")
+                rows = self.cloud("POST", "/rest/v1/todos", {"user_id": owner, "title": title.strip()})
+            else:
+                uuid.UUID(todo_id)
+                if not isinstance(completed, bool):
+                    raise ValueError("Invalid completion")
+                query = urllib.parse.urlencode({"id": "eq." + todo_id, "user_id": "eq." + owner})
+                rows = self.cloud("PATCH", "/rest/v1/todos?" + query, {"completed": completed})
+            if not rows:
+                raise CloudError("ไม่พบรายการ กรุณารีเฟรช", 404)
+            row = rows[0]
+            self.todos = [row] + [item for item in self.todos if item["id"] != row["id"]]
+            self.persist()  # Keep successful writes even when the following refresh fails.
+            try:
+                return self.sync_todos()
+            except CloudError:
+                return self.snapshot()
+
     def snapshot(self):
         with self.lock:
             return {"signedIn": bool(self.session),
                     "email": self.session["user"]["email"] if self.session else "",
                     "tasks": self.tasks, "online": self.online,
+                    "todos": self.todos, "todoOnline": self.todo_online, "lastTodoSync": self.last_todo_sync,
                     "lastSync": self.last_sync, "webUrl": self.config.get("web_url", "")}
 
     def reminders(self, now=None, notify=None):
@@ -279,6 +343,14 @@ def make_handler(workspace, token, port):
                     result = workspace.snapshot()
                 elif self.path == "/refresh":
                     result = workspace.sync()
+                elif self.path == "/todos/refresh":
+                    result = workspace.sync_todos()
+                elif self.path == "/todos/create":
+                    result = workspace.save_todo(title=body.get("title"))
+                elif self.path == "/todos/update":
+                    if not isinstance(body.get("id"), str):
+                        raise ValueError()
+                    result = workspace.save_todo(todo_id=body["id"], completed=body.get("completed"))
                 elif self.path == "/complete":
                     task_id = body.get("id")
                     if not isinstance(task_id, str):
@@ -301,6 +373,10 @@ def poll(workspace, stop):
         try:
             workspace.sync()
             workspace.reminders()
+        except CloudError:
+            pass
+        try:
+            workspace.sync_todos()
         except CloudError:
             pass
         stop.wait(30)

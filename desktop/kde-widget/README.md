@@ -130,3 +130,14 @@ The calendar shares the main widget's frosted wallpaper surface and supports Tha
 and light/dark/system themes. Blur falls back to an opaque surface in panel popups or
 software rendering. The calendar's `glass` setting can disable the effect. Both packages are removed
 by the existing uninstall command.
+
+## Undated Todo widget
+
+Add **TaskFlow Todo** from Plasma's Add Widgets menu. It shares the companion and
+account with the other widgets, uses the frosted background, and syncs the web
+Todo table every 30 seconds. Add reminders without dates, check them off, and use
+Show completed to reopen them. Editing and deletion remain available on the web.
+Todo has its own cached list and sync status; failures do not stop scheduled-task
+refreshes or reminders. Offline writes show an error and retain the input for retry.
+This addition is newer than the published v1.0.0 assets; updating from this source
+requires rerunning the installer. It does not modify the existing Release 1 archives.
