@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CheckCircle2, ListTodo, Plus, Network } from "lucide-react";
+import { CheckCircle2, ListTodo, Plus, Network } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
@@ -18,7 +18,6 @@ const leadingItems: readonly MobileNavigationItem[] = [
 ];
 
 const trailingItems: readonly MobileNavigationItem[] = [
-  { view: "upcoming", label: "upcoming", icon: CalendarClock },
   { view: "completed", label: "completed", icon: CheckCircle2 },
 ];
 
@@ -95,7 +94,7 @@ export function MobileNavigation({
       aria-label={messages.accessibility.mobileNavigation}
       className={`fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.09] bg-[#090b0a]/94 px-[max(0.5rem,env(safe-area-inset-left))] pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_55px_rgba(0,0,0,0.5)] backdrop-blur-2xl lg:hidden ${className}`}
     >
-      <div className="mx-auto grid max-w-xl grid-cols-6 items-end gap-0.5">
+      <div className="mx-auto grid max-w-xl grid-cols-5 items-end gap-0.5">
         {leadingItems.map(renderItem)}
         <button type="button" onClick={onProjects} aria-current={projectActive ? "page" : undefined} className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl text-[0.62rem] ${projectActive ? "text-[#b7c3ac] bg-white/5" : "text-[#b4bdb0]"}`}><Network size={20} aria-hidden="true" />{locale === "th" ? "โปรเจกต์" : "Projects"}</button>
 

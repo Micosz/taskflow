@@ -16,9 +16,8 @@ export function ViewSwitcher({ view, counts, locale, messages, onChange }: ViewS
   return (
     <nav aria-label={messages.navigation.label} className="-mx-4 overflow-x-auto px-4 pb-1 lg:hidden">
       <div className="flex min-w-max gap-2">
-        {TASK_VIEWS.map((option) => {
+        {TASK_VIEWS.filter((option) => option !== "upcoming" && option !== "overdue").map((option) => {
           const active = option === view;
-          const alert = option === "overdue" && counts.overdue > 0;
           return (
             <motion.button
               key={option}
@@ -29,9 +28,7 @@ export function ViewSwitcher({ view, counts, locale, messages, onChange }: ViewS
               className={`relative min-h-10 overflow-hidden rounded-full border px-3.5 text-xs font-medium transition ${
                 active
                   ? "border-[#a7b49c]/25 bg-[#9aaa91]/10 text-[#dfe5da]"
-                  : alert
-                    ? "border-[#ef654a]/20 bg-[#ef654a]/[0.06] text-[#ef806b]"
-                    : "border-white/[0.075] bg-white/[0.025] text-[#858a84] hover:bg-white/[0.05] hover:text-white"
+                  : "border-white/[0.075] bg-white/[0.025] text-[#858a84] hover:bg-white/[0.05] hover:text-white"
               }`}
             >
               <span className="relative z-10">

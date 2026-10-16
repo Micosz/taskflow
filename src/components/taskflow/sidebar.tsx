@@ -16,8 +16,6 @@ interface NavigationItem {
 }
 
 const navigationItems: readonly NavigationItem[] = [
-  { view: "upcoming", label: "upcoming" },
-  { view: "overdue", label: "overdue" },
   { view: "completed", label: "completed" },
 ];
 
