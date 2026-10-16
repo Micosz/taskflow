@@ -54,3 +54,27 @@ private `todos` table and owner-authorized Realtime channels.
 Apply `supabase/migrations/202610140001_create_todos.sql` before enabling cloud Todo.
 Moving guest Todo into an account requires an explicit import; retries are idempotent,
 and source items are cleared only after verification. Guest edits made during import remain.
+
+### Projects
+
+The Projects section pairs an interactive force graph with the existing calendar.
+Saved courses and name-only custom projects share the existing owner-scoped course
+catalog (`courses` / `taskflow:v1:courses`); no new table or widget update is needed.
+Create a custom project in Projects, then choose it under **Course / project** in
+the task form. Existing task-only categories also appear automatically, including
+categories whose saved preset was removed. An empty saved preset remains visible.
+
+Membership uses a normalized category snapshot, matching the existing task model.
+Renaming a saved preset does not move historical tasks: the old category remains
+its own project until those tasks are edited. Deleting a preset never deletes tasks.
+Projects are derived from the current account's repositories, with UI reset across
+account scope changes; guest projects participate in the existing course migration.
+
+Edges follow due date, due time (untimed last), creation time, then task ID, including
+completed milestones. Changing dates, moving categories, adding or deleting tasks
+rebuilds the sequence. Edges represent schedule order, not dependencies. The graph
+supports pointer-captured node drag, canvas pan, cursor-centered wheel zoom, zoom
+buttons and fit. Positions are temporary presentation state, not task mutations.
+The damped simulation cools to rest, suspends in hidden tabs, cleans up on unmount,
+and uses a static layout for reduced motion. Task nodes are keyboard accessible;
+a chronological task list provides an alternative to the spatial graph.

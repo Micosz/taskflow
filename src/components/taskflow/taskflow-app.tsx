@@ -48,6 +48,8 @@ import { TaskList } from "./task-list";
 import { TaskCalendar } from "./task-calendar";
 import { Toast, type ToastMessage } from "./toast";
 import { TodoPanel } from "./todo-panel";
+import { ProjectPanel } from "./project-panel";
+import { getProjects } from "@/features/projects/project-selectors";
 import { ViewSwitcher } from "./view-switcher";
 
 export function TaskFlowApp() {
@@ -77,7 +79,9 @@ export function TaskFlowApp() {
   const [uiScopeKey, setUiScopeKey] = useState(repositorySelection.scopeKey);
   const [selectedView, setSelectedView] = useState<TaskView>(DEFAULT_TASK_VIEW);
   const [selectedSearchQuery, setSelectedSearchQuery] = useState("");
-  const [section, setSection] = useState<"tasks" | "todo">("tasks");
+  const [section, setSection] = useState<"tasks" | "todo" | "projects">("tasks");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [defaultCategory, setDefaultCategory] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -185,6 +189,7 @@ export function TaskFlowApp() {
   const activateUiScope = useCallback(() => {
     if (uiScopeKey === repositorySelection.scopeKey) return;
     setUiScopeKey(repositorySelection.scopeKey);
+    setSelectedProjectId(null);
     setSelectedView(DEFAULT_TASK_VIEW);
     setSelectedSearchQuery("");
     setFormOpen(false);
@@ -198,9 +203,17 @@ export function TaskFlowApp() {
   const openCreate = useCallback(() => {
     activateUiScope();
     setEditingTask(null);
+    setDefaultCategory("");
     setFormRevision((revision) => revision + 1);
     setFormOpen(true);
   }, [activateUiScope]);
+
+  const openProjectCreate = (category?: string) => {
+    openCreate();
+    const project = getProjects(courseManager.courses, taskManager.tasks).find((item) => item.id === selectedProjectId)
+      ?? getProjects(courseManager.courses, taskManager.tasks)[0];
+    setDefaultCategory(category ?? project?.name ?? "");
+  };
 
   const openEdit = useCallback((task: Task) => {
     activateUiScope();
@@ -451,6 +464,8 @@ export function TaskFlowApp() {
           messages={messages}
           locale={locale}
           activeView={view}
+          projectActive={section === "projects"}
+          onProjects={() => { activateUiScope(); setSection("projects"); }}
           todoActive={section === "todo"}
           onTodo={() => setSection("todo")}
           counts={counts}
@@ -458,7 +473,7 @@ export function TaskFlowApp() {
           onViewChange={handleViewChange}
           onSearchChange={handleSearchChange}
           onLocaleChange={handleLocaleChange}
-          onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : openCreate}
+          onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : section === "projects" ? () => openProjectCreate() : openCreate}
           onSettings={() => setSettingsOpen(true)}
           onAccount={() =>
             repositorySelection.mode === "cloud"
@@ -476,7 +491,12 @@ export function TaskFlowApp() {
           tabIndex={-1}
           className="app-main min-w-0 pb-28 pt-5 sm:pt-7 lg:pb-0 lg:pt-0"
         >
-          {section === "todo" ? <TodoPanel key={repositorySelection.scopeKey}
+          {section === "projects" ? <ProjectPanel key={repositorySelection.scopeKey}
+            courses={courseManager.courses} tasks={taskManager.tasks} now={referenceDate} locale={locale} messages={messages}
+            status={taskManager.status} courseStatus={courseManager.status} selectedId={scopeIsCurrent ? selectedProjectId : null}
+            onSelect={(id) => { activateUiScope(); setSelectedProjectId(id); }} onCreate={courseManager.createCourse}
+            onRetry={() => { void taskManager.loadTasks(); void courseManager.loadCourses(); }} onOpen={openDetail} onAdd={openProjectCreate}
+          /> : section === "todo" ? <TodoPanel key={repositorySelection.scopeKey}
             userId={authenticatedUserId} client={auth.client} enabled={auth.isInitialized}
             locale={locale} messages={messages} onLocaleChange={handleLocaleChange} onSettings={() => setSettingsOpen(true)} /> : <>
           {now ? (
@@ -581,17 +601,20 @@ export function TaskFlowApp() {
         messages={messages}
         locale={locale}
         activeView={view}
-        todoActive={section === "todo"}
+        projectActive={section === "projects"}
+          onProjects={() => { activateUiScope(); setSection("projects"); }}
+          todoActive={section === "todo"}
         onTodo={() => setSection("todo")}
         counts={counts}
         onViewChange={handleViewChange}
-        onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : openCreate}
+        onAdd={section === "todo" ? () => document.getElementById("todo-title")?.focus() : section === "projects" ? () => openProjectCreate() : openCreate}
       />
 
       <TaskFormDialog
         key={`task-form-${formRevision}`}
         open={scopeIsCurrent && formOpen}
         task={scopeIsCurrent ? editingTask : null}
+        defaultCategory={defaultCategory}
         courses={courseManager.courses}
         courseStatus={courseManager.status}
         messages={messages}

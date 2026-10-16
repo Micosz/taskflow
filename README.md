@@ -1,7 +1,7 @@
 # TaskFlow
 
-A personal task planner in English and Thai, with scheduled work, Saved Courses,
-and a separate undated Todo list. Use it as a guest in your browser or sign in
+A personal task planner in English and Thai, with scheduled work, course and custom
+Projects, an interactive task graph, and a separate undated Todo list. Use it as a guest in your browser or sign in
 for private Supabase storage and cross-device synchronization.
 
 [Open TaskFlow](https://taskflow-ruddy-one.vercel.app/) ·
