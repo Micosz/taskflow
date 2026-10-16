@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "kde-widget"))
 from bridge import Workspace, CloudError, save_private
 
 WEB_URL = "https://taskflow-ruddy-one.vercel.app/"
-VERSION = "1.0.0"
 SETTINGS_KEYS = {"task_geometry", "calendar_geometry", "todo_geometry", "language"}
 
 
@@ -351,7 +350,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--install", action="store_true")
     parser.add_argument("--uninstall", action="store_true")
-    parser.add_argument("--smoke-test", action="store_true", help="Construct both windows without connecting to the cloud, then exit")
+    parser.add_argument("--smoke-test", action="store_true", help="Construct all three windows without connecting to the cloud, then exit")
     args = parser.parse_args()
     if args.install:
         install_windows()

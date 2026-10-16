@@ -8,6 +8,12 @@ from portable import read_settings
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_widget_metadata_matches_release_version(self):
+        root = Path(__file__).resolve().parents[2]
+        version = json.loads((root / "package.json").read_text())["version"]
+        for package in (root / "desktop/kde-widget").glob("*plasmoid/metadata.json"):
+            self.assertEqual(json.loads(package.read_text())["KPlugin"]["Version"], version)
+
     def test_rejects_admin_and_malformed_public_config(self):
         for key in ["sb_secret_admin", "not-a-public-key", "ey.a.b"]:
             with self.assertRaises(ValueError):

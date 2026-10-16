@@ -139,8 +139,8 @@ Todo table every 30 seconds. Add reminders without dates, check them off, and us
 Show completed to reopen them. Editing and deletion remain available on the web.
 Todo has its own cached list and sync status; failures do not stop scheduled-task
 refreshes or reminders. Offline writes show an error and retain the input for retry.
-This addition is newer than the published v1.0.0 assets; updating from this source
-requires rerunning the installer. It does not modify the existing Release 1 archives.
+Included in v1.1.0. Rerun the installer to update; existing account/cache/preferences
+are retained. Log out/in once if Plasma still has the old QML loaded.
 
 ## Startup recovery
 

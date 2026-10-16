@@ -5,7 +5,7 @@ and a separate undated Todo list. Use it as a guest in your browser or sign in
 for private Supabase storage and cross-device synchronization.
 
 [Open TaskFlow](https://taskflow-ruddy-one.vercel.app/) ·
-[Download desktop Release 1](https://github.com/Micosz/taskflow/releases/tag/v1.0.0)
+[Download desktop v1.1.0](https://github.com/Micosz/taskflow/releases/tag/v1.1.0)
 
 ## Develop
 
@@ -49,11 +49,12 @@ Project configuration, environment files and dependency manifests stay at the ro
 - [KDE companion, reminders, privacy and removal](desktop/kde-widget/README.md)
 - [Historical design QA](docs/archive/design-qa.md)
 
-Desktop Release 1 supports Windows 10/11 x64 and Linux with Python 3.10+.
+Desktop v1.1.0 supports Windows 10/11 x64 and Linux with Python 3.10+.
 Plasma 6 uses native widgets with frosted backgrounds and deadline reminders;
 GNOME/other desktops and Windows use opaque, movable portable windows.
-The current source also includes a separate Todo widget/window with add, complete
-and reopen actions synced to the web. This is newer than the v1.0.0 desktop archives.
+The download includes three widgets/windows: scheduled tasks, calendar, and undated
+Todo with add, complete and reopen actions synced to the web. KDE widgets reconnect
+automatically if the companion is still starting at login.
 
 ## Mobile and limitations
 
