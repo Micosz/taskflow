@@ -16,8 +16,6 @@ interface NavigationItem {
 }
 
 const navigationItems: readonly NavigationItem[] = [
-  { view: "active", label: "active" },
-  { view: "today", label: "today" },
   { view: "upcoming", label: "upcoming" },
   { view: "overdue", label: "overdue" },
   { view: "completed", label: "completed" },
@@ -27,6 +25,8 @@ export interface SidebarProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  projectActive: boolean;
+  onProjects: () => void;
   todoActive: boolean;
   onTodo: () => void;
   counts: Record<TaskView, number>;
@@ -47,6 +47,8 @@ export function Sidebar({
   messages,
   locale,
   activeView,
+  projectActive,
+  onProjects,
   todoActive,
   onTodo,
   counts,
@@ -76,8 +78,10 @@ export function Sidebar({
       </button>
 
       <nav aria-label={messages.accessibility.desktopNavigation} className="editorial-topbar__nav">
+        <button type="button" className="editorial-nav-link" data-active={!todoActive && !projectActive && activeView === "active" || undefined} aria-current={!todoActive && !projectActive && activeView === "active" ? "page" : undefined} onClick={() => onViewChange("active")}>{messages.navigation.active}</button>
+        <button type="button" className="editorial-nav-link" data-active={projectActive || undefined} aria-current={projectActive ? "page" : undefined} onClick={onProjects}>{locale === "th" ? "โปรเจกต์" : "Projects"}</button>
         {navigationItems.map(({ view, label }) => {
-          const selected = !todoActive && view === activeView;
+          const selected = !todoActive && !projectActive && view === activeView;
           const isAlert = view === "overdue" && counts.overdue > 0;
 
           return (
@@ -101,7 +105,7 @@ export function Sidebar({
         <button type="button" className="editorial-nav-link" data-active={todoActive || undefined} aria-current={todoActive ? "page" : undefined} onClick={onTodo}>{messages.todo.title}</button>
       </nav>
 
-      <label className="editorial-search editorial-topbar__search" hidden={todoActive}>
+      <label className="editorial-search editorial-topbar__search" hidden={todoActive || projectActive}>
         <span className="sr-only">{messages.header.searchLabel}</span>
         <Search aria-hidden="true" size={18} strokeWidth={1.45} />
         <input

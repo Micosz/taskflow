@@ -1343,3 +1343,75 @@ input[type="time"] {
   }
 
 }
+
+/* Project workspace: the same planner, paired with an interactive graph. */
+.project-page { min-width: 0; color: #f1efe7; }
+.project-page__toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1.25rem 0; border-bottom: 1px solid #292d28; }
+.project-page__title { display: flex; align-items: center; gap: .6rem; color: #b7c3ac; }
+.project-page__title h1 { font-size: 1rem; color: #f1efe7; }
+.project-page__select { flex: 1; min-width: 10rem; max-width: 30rem; }
+.project-page select, .project-create input { width: 100%; min-height: 44px; border: 1px solid #30362e; border-radius: 8px; background: #101310; padding: .55rem .8rem; color: #f1efe7; font-size: .85rem; }
+.project-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: .5rem; border: 1px solid #b7c3ac30; border-radius: 8px; background: #b7c3ac0c; padding: .5rem .8rem; color: #c4d1ba; font-size: .8rem; cursor: pointer; transition: background-color 150ms; }
+.project-button:hover { background: #b7c3ac18; }
+.project-button:disabled { opacity: .45; cursor: default; }
+.project-page button:focus-visible, .project-page input:focus-visible, .project-page select:focus-visible, .project-task-index summary:focus-visible { outline: 2px solid #b7c3ac; outline-offset: 3px; }
+.project-create { padding: 1.25rem; margin-top: 1rem; border: 1px solid #30362e; border-radius: 12px; background: #101310; }
+.project-create > div { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .5rem; }
+.project-create input { flex: 1; min-width: 12rem; }
+.project-create p { margin-top: .65rem; color: #8f938d; font-size: .75rem; }
+.project-create [role=alert] { color: #ef806b; }
+.project-page__empty { display: flex; min-height: 25rem; flex-direction: column; justify-content: center; align-items: center; gap: 1rem; text-align: center; padding: 2rem; }
+.project-page__empty p { color: #8f938d; max-width: 30rem; }
+.project-workspace { display: grid; min-width: 0; }
+.project-workspace__graph { min-width: 0; padding-top: 1.75rem; }
+.project-workspace__graph header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1rem; }
+.project-workspace__graph header p { font-size: .65rem; letter-spacing: .1em; color: #8f938d; margin-bottom: .5rem; }
+.project-workspace__graph h2 { font-size: clamp(1.2rem, 2vw, 1.6rem); line-height: 1.4; overflow-wrap: anywhere; }
+.project-workspace__graph header > span { flex-shrink: 0; font-size: .75rem; color: #8f938d; }
+.project-graph { position: relative; margin-top: 1rem; background: radial-gradient(ellipse at center, #b7c3ac07, transparent 70%); }
+.project-graph > svg { display: block; width: 100%; height: clamp(320px, 48vh, 560px); touch-action: none; user-select: none; cursor: grab; }
+.project-graph > svg:active { cursor: grabbing; }
+.project-graph__tools { position: absolute; z-index: 1; top: .75rem; right: .75rem; display: flex; gap: .25rem; }
+.project-graph__tools button { display: grid; place-items: center; width: 36px; height: 36px; background: #101310; border: 1px solid #292d28; border-radius: 7px; color: #b7c3ac; cursor: pointer; }
+.project-graph__link { stroke: #b7c3ac38; stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke 150ms, opacity 150ms; }
+.project-graph__link[data-highlight] { stroke: #c9d9bc; stroke-width: 1.5; }
+.project-graph__node { cursor: grab; fill: #b7c3ac; outline: none; transition: opacity 150ms; }
+.project-graph__node[data-root] { fill: #e0e7d8; }
+.project-graph__node[data-completed] { fill: #606d5a; }
+.project-graph__node:focus-visible > circle:not(.project-graph__hit), .project-graph__node:hover > circle:not(.project-graph__hit) { stroke: #e6f1dd; stroke-width: 3; stroke-opacity: .4; }
+.project-graph__node text { fill: #c4c8c0; font-family: inherit; font-size: 12px; pointer-events: none; }
+.project-graph__node .project-graph__date { fill: #747c70; font-size: 10px; }
+.project-graph__hit { fill: transparent; }
+.project-graph [data-dim] { opacity: .25; }
+.project-graph__hint { padding: .5rem 1rem; text-align: center; font-size: .65rem; color: #7f867b; }
+.project-workspace__footer { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1rem; }
+.project-workspace__footer > span { display: inline-flex; align-items: center; gap: .4rem; font-size: .7rem; color: #8f938d; }
+.project-workspace__footer i { width: 6px; height: 6px; border-radius: 50%; background: #b7c3ac; }
+.project-workspace__footer i[data-completed] { background: #606d5a; }
+.project-workspace__footer button { margin-left: auto; }
+.project-workspace__empty { color: #8f938d; padding: 0 1rem 1rem; font-size: .8rem; }
+.project-workspace__calendar { min-width: 0; padding-top: 1.5rem; border-top: 1px solid #292d28; }
+.project-task-index { border-top: 1px solid #292d28; padding: 1.25rem 0; font-size: .8rem; }
+.project-task-index summary { cursor: pointer; color: #8f938d; padding: .5rem 0; }
+.project-task-index li button { display: flex; justify-content: space-between; gap: 1rem; width: 100%; text-align: left; padding: .75rem 0; border-bottom: 1px solid #ffffff08; }
+.project-task-index time { white-space: nowrap; color: #8f938d; }
+@media (min-width: 1024px) {
+  .project-page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .project-page__toolbar { flex-shrink: 0; padding: 1.1rem 0; }
+  .project-workspace { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(25rem, 1fr); overflow: hidden; }
+  .project-workspace__graph { overflow-y: auto; border-right: 1px solid #292d28; padding-right: 1.5rem; }
+  .project-workspace__calendar { padding: 0 0 0 2.75rem; overflow-y: auto; scrollbar-gutter: stable; border-top: 0; }
+  .project-workspace__calendar .task-calendar { padding-top: 1.75rem; }
+  .editorial-topbar__nav { gap: 1.15rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-graph__node, .project-graph__link, .project-button { transition: none; }
+}
+@media (max-width: 600px) {
+  .project-graph__node text { font-size: 18px; }
+  .project-graph__node .project-graph__date { font-size: 14px; }
+}
+@keyframes project-node-enter { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .project-graph__node { animation: project-node-enter 200ms ease-out; }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { CalendarClock, CheckCircle2, ListTodo, Plus, SunMedium } from "lucide-react";
+import { CalendarClock, CheckCircle2, ListTodo, Plus, Network } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { formatNumber, type Locale, type TranslationMessages } from "@/i18n";
@@ -15,7 +15,6 @@ interface MobileNavigationItem {
 
 const leadingItems: readonly MobileNavigationItem[] = [
   { view: "active", label: "active", icon: ListTodo },
-  { view: "today", label: "today", icon: SunMedium },
 ];
 
 const trailingItems: readonly MobileNavigationItem[] = [
@@ -27,6 +26,8 @@ export interface MobileNavigationProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  projectActive: boolean;
+  onProjects: () => void;
   todoActive: boolean;
   onTodo: () => void;
   counts: Record<TaskView, number>;
@@ -39,6 +40,8 @@ export function MobileNavigation({
   messages,
   locale,
   activeView,
+  projectActive,
+  onProjects,
   todoActive,
   onTodo,
   counts,
@@ -49,7 +52,7 @@ export function MobileNavigation({
   const shouldReduceMotion = useReducedMotion();
 
   const renderItem = ({ view, label, icon: Icon }: MobileNavigationItem) => {
-    const selected = !todoActive && activeView === view;
+    const selected = !todoActive && !projectActive && activeView === view;
 
     return (
       <motion.button
@@ -94,6 +97,7 @@ export function MobileNavigation({
     >
       <div className="mx-auto grid max-w-xl grid-cols-6 items-end gap-0.5">
         {leadingItems.map(renderItem)}
+        <button type="button" onClick={onProjects} aria-current={projectActive ? "page" : undefined} className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl text-[0.62rem] ${projectActive ? "text-[#b7c3ac] bg-white/5" : "text-[#b4bdb0]"}`}><Network size={20} aria-hidden="true" />{locale === "th" ? "โปรเจกต์" : "Projects"}</button>
 
         <div className="relative flex min-h-14 items-center justify-center">
           <motion.button

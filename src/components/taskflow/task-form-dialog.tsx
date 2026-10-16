@@ -23,6 +23,7 @@ import { useDialogA11y } from "./use-dialog-a11y";
 interface TaskFormDialogProps {
   open: boolean;
   task: Task | null;
+  defaultCategory?: string;
   courses: readonly Course[];
   courseStatus: "loading" | "ready" | "error";
   messages: TranslationMessages;
@@ -52,6 +53,7 @@ function initialValues(task: Task | null): TaskFormValues {
 export function TaskFormDialog({
   open,
   task,
+  defaultCategory = "",
   courses,
   courseStatus,
   messages,
@@ -63,13 +65,13 @@ export function TaskFormDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  const [values, setValues] = useState<TaskFormValues>(() => initialValues(task));
-  const initialCourse = task ? findCourseForCategory(courses, task.category) : null;
+  const [values, setValues] = useState<TaskFormValues>(() => ({ ...initialValues(task), category: task?.category ?? defaultCategory }));
+  const initialCourse = findCourseForCategory(courses, task?.category ?? defaultCategory);
   const [selectedCourseId, setSelectedCourseId] = useState(
-    initialCourse?.id ?? (task || courses.length === 0 ? OTHER_COURSE_OPTION : ""),
+    initialCourse?.id ?? (task || defaultCategory || courses.length === 0 ? OTHER_COURSE_OPTION : ""),
   );
   const [customCategory, setCustomCategory] = useState(
-    initialCourse ? "" : task?.category ?? "",
+    initialCourse ? "" : task?.category ?? defaultCategory,
   );
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -100,8 +102,11 @@ export function TaskFormDialog({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     const submittedValues = {
       ...values,
+      dueDate: String(formData.get("dueDate") ?? values.dueDate),
+      dueTime: String(formData.get("dueTime") ?? values.dueTime),
       category: resolveTaskCategory(
         courses,
         selectedCourseId,
