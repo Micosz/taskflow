@@ -112,7 +112,7 @@ def main():
     for package, destination in (("calendar-plasmoid", calendar), ("todo-plasmoid", todo)):
         shutil.copytree(source / package, destination, dirs_exist_ok=True)
         os.chmod(destination, 0o700)
-        for component in ("WidgetTheme.qml", "WidgetButton.qml", "WidgetField.qml", "GlassSurface.qml"):
+        for component in ("WidgetTheme.qml", "WidgetButton.qml", "WidgetField.qml", "GlassSurface.qml", "CompanionRetry.qml"):
             shutil.copy2(source / "plasmoid/contents/ui" / component, destination / "contents/ui" / component)
         shutil.copy2(connection, destination / "contents/ui/connection.js")
         os.chmod(destination / "contents/ui/connection.js", 0o600)

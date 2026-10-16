@@ -141,3 +141,13 @@ Todo has its own cached list and sync status; failures do not stop scheduled-tas
 refreshes or reminders. Offline writes show an error and retain the input for retry.
 This addition is newer than the published v1.0.0 assets; updating from this source
 requires rerunning the installer. It does not modify the existing Release 1 archives.
+
+## Startup recovery
+
+All three Plasma widgets retry a missing/unresponsive companion automatically after
+2, 4, 8, then at most every 15 seconds. A successful response resets the delay.
+Retries only read `/state`; login, add and completion commands are never replayed.
+Status reads time out after 8 seconds; cloud/mutation requests retain a 60-second
+guard. The normal 30-second poll remains. Existing cached data stays visible while
+reconnecting. No Plasma restart is needed to run the companion; log out/in once
+after updating QML if Plasma is still using its previously loaded components.

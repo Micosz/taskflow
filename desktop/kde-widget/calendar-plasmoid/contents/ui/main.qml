@@ -11,6 +11,7 @@ PlasmoidItem {
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     property var workspace: ({signedIn: false, tasks: [], online: false})
     property bool loaded: false
+    CompanionRetry { id: reconnect; onRetry: root.request("GET", "/state") }
     property bool busy: false
     property string errorMessage: ""
     property bool thai: Plasmoid.configuration.thai
@@ -44,8 +45,9 @@ PlasmoidItem {
         var xhr = new XMLHttpRequest();
         var finished = false;
         var guard = Qt.createQmlObject('import QtQuick; Timer { interval: 60000; repeat: false }', root);
+        guard.interval = method === "GET" ? 8000 : 60000;
         guard.triggered.connect(function() {
-            if (!finished) { finished = true; xhr.abort(); root.busy = false; root.errorMessage = root.tr("การเชื่อมต่อใช้เวลานาน กรุณาลองใหม่", "Connection timed out. Try again."); }
+            if (!finished) { finished = true; xhr.abort(); root.busy = false; root.errorMessage = root.tr("กำลังรอการเชื่อมต่อ จะลองใหม่อัตโนมัติ", "Waiting for connection. Retrying automatically."); reconnect.failed(); }
             guard.destroy();
         });
         xhr.onreadystatechange = function() {
@@ -53,9 +55,11 @@ PlasmoidItem {
             finished = true; guard.stop(); guard.destroy(); root.busy = false;
             try {
                 var result = JSON.parse(xhr.responseText);
-                if (xhr.status === 200) { root.workspace = result; root.loaded = true; root.errorMessage = ""; }
+                reconnect.recovered();
+                if (xhr.status === 200) { root.workspace = result; root.loaded = true; root.errorMessage = ""; reconnect.recovered(); }
                 else { if (result.state) { root.workspace = result.state; root.loaded = true; } root.errorMessage = result.error || root.tr("เชื่อมต่อไม่ได้", "Could not connect."); }
-            } catch (e) { root.errorMessage = root.tr("ตัวช่วยยังไม่ทำงาน ลองเปิด TaskFlow อีกครั้ง", "Companion unavailable. Start TaskFlow again."); }
+            } catch (e) {
+                reconnect.failed(); root.errorMessage = root.tr("กำลังรอตัวช่วยเริ่มทำงาน จะเชื่อมต่อใหม่อัตโนมัติ", "Waiting for companion. Reconnecting automatically."); }
         };
         xhr.open(method, Connection.baseUrl + path);
         xhr.setRequestHeader("Authorization", "Bearer " + Connection.token);
