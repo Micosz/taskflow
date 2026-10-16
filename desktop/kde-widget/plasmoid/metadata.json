@@ -7,8 +7,12 @@
     "Description[th]": "งานและกำหนดส่ง TaskFlow บนเดสก์ท็อป",
     "Icon": "view-task",
     "Category": "Utilities",
-    "Authors": [{ "Name": "Micosz" }],
-    "Version": "0.1.0",
+    "Authors": [
+      {
+        "Name": "Micosz"
+      }
+    ],
+    "Version": "1.1.0",
     "Website": "https://github.com/Micosz/taskflow"
   },
   "X-Plasma-API-Minimum-Version": "6.0"

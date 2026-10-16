@@ -2,6 +2,8 @@ name: Build desktop release
 on:
   push:
     tags: ['v1.*']
+env:
+  RELEASE_VERSION: ${{ github.ref_name }}
 permissions:
   contents: read
 jobs:
@@ -14,13 +16,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Verify release version
+        run: python -c "import json,os; assert 'v'+json.load(open('package.json'))['version']==os.environ['RELEASE_VERSION']"
       - name: Prepare public app configuration
         run: python -c "import shutil; shutil.copy2('desktop/release/public-settings.json', 'desktop/release/public-config.json')"
       - run: python -m pip install pyinstaller==6.16.0
       - name: Test shared bridge
         run: python -m unittest discover -s desktop/kde-widget -p 'test_*.py' -v
+      - name: Set Windows product version
+        run: python desktop/release/build_release.py --windows-version-file windows-version.txt
       - name: Build executable
-        run: python -m PyInstaller --noconfirm --onefile --windowed --name TaskFlowWidget --paths desktop/kde-widget --add-data "desktop/release/public-config.json;." desktop/release/portable.py
+        run: python -m PyInstaller --noconfirm --onefile --windowed --name TaskFlowWidget --version-file windows-version.txt --paths desktop/kde-widget --add-data "desktop/release/public-config.json;." desktop/release/portable.py
       - name: Smoke test and package
         shell: pwsh
         run: |
@@ -29,13 +35,18 @@ jobs:
           if ($proc.ExitCode -ne 0) { throw 'Widget smoke test failed' }
           Copy-Item desktop/release/Install.cmd,desktop/release/Uninstall.cmd dist/
           Copy-Item desktop/release/RELEASE-README.md dist/README.md
-          Compress-Archive -Path dist/TaskFlowWidget.exe,dist/Install.cmd,dist/Uninstall.cmd,dist/README.md -DestinationPath TaskFlow-Widgets-1.0.0-Windows-x64.zip
-          $hash = (Get-FileHash TaskFlow-Widgets-1.0.0-Windows-x64.zip -Algorithm SHA256).Hash.ToLower()
-          "$hash  TaskFlow-Widgets-1.0.0-Windows-x64.zip" | Out-File -Encoding ascii SHA256SUMS-Windows.txt
+          $version = $env:RELEASE_VERSION.TrimStart('v')
+          $archive = "TaskFlow-Widgets-$version-Windows-x64.zip"
+          Compress-Archive -Path dist/TaskFlowWidget.exe,dist/Install.cmd,dist/Uninstall.cmd,dist/README.md -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -Encoding ascii SHA256SUMS-Windows.txt
       - name: Upload Windows files to draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload ${{ github.ref_name }} TaskFlow-Widgets-1.0.0-Windows-x64.zip SHA256SUMS-Windows.txt --clobber
+        shell: pwsh
+        run: |
+          $version = $env:RELEASE_VERSION.TrimStart('v')
+          gh release upload $env:RELEASE_VERSION "TaskFlow-Widgets-$version-Windows-x64.zip" SHA256SUMS-Windows.txt --clobber
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -45,6 +56,8 @@ jobs:
           python-version: '3.12'
       - name: Install Tk smoke test dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+      - name: Verify release version
+        run: python -c "import json,os; assert 'v'+json.load(open('package.json'))['version']==os.environ['RELEASE_VERSION']"
       - name: Prepare public app configuration
         run: python -c "import shutil; shutil.copy2('desktop/release/public-settings.json', 'desktop/release/public-config.json')"
       - name: Test shared bridge and packaging

@@ -29,6 +29,50 @@ class BridgeTests(unittest.TestCase):
                         "user": {"id": "owner", "email": "owner@example.org"}}
         self.workspace.accept_session(self.session)
 
+    def test_todo_sync_is_owner_scoped_paginated_and_persisted(self):
+        calls = []
+        todo = {"id": TASK["id"], "title": "จดไว้", "completed": False}
+        def cloud(method, path, body=None, authenticated=True):
+            if path == "/auth/v1/user": return {"id": "owner"}
+            calls.append(path)
+            self.assertIn("user_id=eq.owner", path)
+            return [dict(todo, id=str(i)) for i in range(500)] if "offset=0" in path else [todo]
+        self.workspace.cloud = cloud
+        result = self.workspace.sync_todos()
+        self.assertEqual(len(result["todos"]), 501)
+        self.assertTrue(result["todoOnline"])
+        self.assertIn("offset=500", calls[-1])
+        self.assertEqual(len(Workspace(self.workspace.config, self.directory).todos), 501)
+        self.workspace.clear()
+        self.assertEqual(self.workspace.snapshot()["todos"], [])
+
+    def test_todo_writes_have_no_deadlines_and_survive_offline_refetch(self):
+        todo = {"id": TASK["id"], "title": "Reminder", "completed": False}
+        def cloud(method, path, body=None, authenticated=True):
+            if method == "POST":
+                self.assertEqual(body, {"user_id": "owner", "title": "Reminder"})
+                return [todo]
+            if method == "PATCH":
+                self.assertIn("user_id=eq.owner", path)
+                return [dict(todo, completed=body["completed"])]
+            raise CloudError("offline")
+        self.workspace.cloud = cloud
+        self.assertEqual(self.workspace.save_todo(title=" Reminder ")["todos"], [todo])
+        self.assertTrue(self.workspace.save_todo(todo_id=TASK["id"], completed=True)["todos"][0]["completed"])
+        self.assertFalse(self.workspace.save_todo(todo_id=TASK["id"], completed=False)["todos"][0]["completed"])
+        for title in [" ", "x"*241, None]:
+            with self.assertRaises(ValueError): self.workspace.save_todo(title=title)
+
+    def test_invalid_todo_auth_clears_cached_todos_without_exposing_tokens(self):
+        self.workspace.todos = [{"id": "private"}]
+        def denied(*args): raise CloudError("expired", 401)
+        self.workspace.cloud = denied
+        with self.assertRaises(CloudError): self.workspace.sync_todos()
+        snapshot = self.workspace.snapshot()
+        self.assertFalse(snapshot["signedIn"])
+        self.assertEqual(snapshot["todos"], [])
+        self.assertNotIn("refresh_token", json.dumps(snapshot))
+
     def test_utf8_cache_roundtrip(self):
         self.workspace.tasks = [dict(TASK, title="ทำรายงานภาษาไทย 📝", description="ทบทวนก่อนส่ง")]
         self.workspace.persist()

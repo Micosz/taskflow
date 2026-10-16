@@ -1,4 +1,4 @@
-# TaskFlow Widgets — Release 1 (1.0.0)
+# TaskFlow Widgets — v1.1.0
 
 After reinstalling your OS, download this release again, install, and sign in to the
 same TaskFlow account. Cloud tasks return from Supabase. Guest-only browser data
@@ -6,7 +6,7 @@ is not a cloud backup: move it into your account before erasing your OS.
 
 ## Linux: Ubuntu/Debian, Fedora/RHEL family
 
-Extract `TaskFlow-Widgets-1.0.0-Linux.tar.gz`, open a terminal in its folder, run:
+Extract `TaskFlow-Widgets-1.1.0-Linux.tar.gz`, open a terminal in its folder, run:
 
 ```bash
 ./install.sh
@@ -16,10 +16,10 @@ Requires Python 3.10+. No Node.js, source checkout, Supabase admin key, or sudo 
 the installer. The release includes the app's public Supabase configuration.
 It never includes a password, a session, or a private loopback credential.
 
-- KDE **Plasma 6**: installs the original TaskFlow and TaskFlow Calendar widgets.
-  Right-click desktop → Add Widgets → add either/both. Sign in in either widget.
+- KDE **Plasma 6**: installs the original TaskFlow, TaskFlow Calendar and TaskFlow Todo widgets.
+  Right-click desktop → Add Widgets → add any/all three. Sign in in either widget.
   Includes glass background, task completion, cached offline work and deadline reminders.
-- GNOME, other desktops, or Plasma 5: opens two portable windows, Tasks and Calendar.
+- GNOME, other desktops, or Plasma 5: opens three portable windows: Tasks, Calendar and Todo.
   Native title bars let you move, resize and minimize; positions are saved on exit.
   For this version surfaces are opaque and there are no native deadline notifications.
 - Force portable mode: `./install.sh --portable`.
@@ -34,17 +34,18 @@ It never includes a password, a session, or a private loopback credential.
 
 ## Windows 10/11 x64
 
-Extract `TaskFlow-Widgets-1.0.0-Windows-x64.zip` into a normal folder (not inside the zip).
+Extract `TaskFlow-Widgets-1.1.0-Windows-x64.zip` into a normal folder (not inside the zip).
 Double-click `Install.cmd`. It installs only for your account under
 `%LOCALAPPDATA%\TaskFlowWidget` and starts automatically at sign-in. No Python, Node,
 admin privileges, or separate service is required. To try without installing,
 run `TaskFlowWidget.exe` directly.
 
-Sign in with your existing TaskFlow email/password. Two movable/resizable windows
-show unfinished tasks and a calendar. Completion syncs to your account; the app
+Sign in with your existing TaskFlow email/password. Three movable/resizable windows
+show unfinished tasks, a calendar, and undated Todo. Add Todo reminders, complete
+them, and show completed reminders to reopen them. Completion syncs to your account; the app
 refreshes every 30 seconds and keeps the last successful tasks offline. Use Web to
-add/edit tasks or access undated Todo. Closing either window quits both; launch
-TaskFlowWidget.exe again to reopen. Windows uses an opaque background in Release 1;
+add/edit tasks or edit/delete undated Todo. Closing any window quits all three; launch
+TaskFlowWidget.exe again to reopen. Windows uses an opaque background in v1.1.0;
 KDE's wallpaper blur is specific to Plasma. There are no native deadline notifications
 on Windows in this release. MFA/CAPTCHA sign-in is not supported by either desktop client.
 
@@ -60,6 +61,10 @@ TaskFlow windows, then delete `%LOCALAPPDATA%\TaskFlowWidget`. Cloud data remain
 Portable widgets: Settings → Export settings saves language, size and window position.
 Put that JSON in your own backed-up folder, and use Settings → Restore settings after
 reinstalling. This file excludes login tokens, passwords, task titles and cached data.
+KDE widgets retry a missing companion automatically at 2/4/8 seconds, capped at
+15 seconds; only state reads are retried, never writes. After updating, log out/in
+once if Plasma still has the old QML loaded.
+
 KDE retains its normal Plasma appearance configuration; after an OS reinstall, re-add
 and position the widgets manually. This release does not back up the whole desktop layout.
 

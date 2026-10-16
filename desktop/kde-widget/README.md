@@ -130,3 +130,24 @@ The calendar shares the main widget's frosted wallpaper surface and supports Tha
 and light/dark/system themes. Blur falls back to an opaque surface in panel popups or
 software rendering. The calendar's `glass` setting can disable the effect. Both packages are removed
 by the existing uninstall command.
+
+## Undated Todo widget
+
+Add **TaskFlow Todo** from Plasma's Add Widgets menu. It shares the companion and
+account with the other widgets, uses the frosted background, and syncs the web
+Todo table every 30 seconds. Add reminders without dates, check them off, and use
+Show completed to reopen them. Editing and deletion remain available on the web.
+Todo has its own cached list and sync status; failures do not stop scheduled-task
+refreshes or reminders. Offline writes show an error and retain the input for retry.
+Included in v1.1.0. Rerun the installer to update; existing account/cache/preferences
+are retained. Log out/in once if Plasma still has the old QML loaded.
+
+## Startup recovery
+
+All three Plasma widgets retry a missing/unresponsive companion automatically after
+2, 4, 8, then at most every 15 seconds. A successful response resets the delay.
+Retries only read `/state`; login, add and completion commands are never replayed.
+Status reads time out after 8 seconds; cloud/mutation requests retain a 60-second
+guard. The normal 30-second poll remains. Existing cached data stays visible while
+reconnecting. No Plasma restart is needed to run the companion; log out/in once
+after updating QML if Plasma is still using its previously loaded components.

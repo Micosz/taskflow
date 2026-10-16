@@ -15,6 +15,7 @@ PlasmoidItem {
         ? PlasmaCore.Types.NoBackground : PlasmaCore.Types.TranslucentBackground
     property var state: ({signedIn: false, tasks: [], online: false})
     property bool loaded: false
+    CompanionRetry { id: reconnect; onRetry: root.request("GET", "/state") }
     property bool busy: false
     property string errorMessage: ""
     property bool settingsOpen: false
@@ -87,10 +88,12 @@ PlasmoidItem {
         var xhr = new XMLHttpRequest();
         var finished = false;
         var guard = Qt.createQmlObject('import QtQuick; Timer { interval: 60000; repeat: false }', root);
+        guard.interval = method === "GET" ? 8000 : 60000;
         guard.triggered.connect(function() {
             if (!finished) {
                 finished = true; xhr.abort(); root.busy = false; root.completingId = "";
-                root.errorMessage = root.tr("การเชื่อมต่อใช้เวลานาน ลองรีเฟรชอีกครั้ง", "Connection timed out. Try refreshing.");
+                root.errorMessage = root.tr("กำลังรอการเชื่อมต่อ จะลองใหม่อัตโนมัติ", "Waiting for connection. Retrying automatically.");
+                reconnect.failed();
             }
             guard.destroy();
         });
@@ -99,8 +102,9 @@ PlasmoidItem {
             finished = true; guard.stop(); guard.destroy(); root.busy = false;
             try {
                 var result = JSON.parse(xhr.responseText);
+                reconnect.recovered();
                 if (xhr.status === 200) {
-                    root.state = result; root.loaded = true; root.errorMessage = "";
+                    root.state = result; root.loaded = true; root.errorMessage = ""; reconnect.recovered();
                     if (path === "/complete") {
                         root.feedback = root.tr("ทำเสร็จแล้ว", "Task completed"); feedbackTimer.restart();
                     }
@@ -109,7 +113,8 @@ PlasmoidItem {
                     root.errorMessage = result.error || root.tr("เชื่อมต่อไม่ได้", "Could not connect.");
                 }
             } catch (e) {
-                root.errorMessage = root.tr("ตัวช่วยยังไม่ทำงาน ลองรันตัวติดตั้งอีกครั้ง", "Companion unavailable. Run the installer again.");
+                reconnect.failed();
+                root.errorMessage = root.tr("กำลังรอตัวช่วยเริ่มทำงาน จะเชื่อมต่อใหม่อัตโนมัติ", "Waiting for companion. Reconnecting automatically.");
             }
             root.completingId = "";
         };

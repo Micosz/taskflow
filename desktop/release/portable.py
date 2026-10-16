@@ -20,8 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "kde-widget"))
 from bridge import Workspace, CloudError, save_private
 
 WEB_URL = "https://taskflow-ruddy-one.vercel.app/"
-VERSION = "1.0.0"
-SETTINGS_KEYS = {"task_geometry", "calendar_geometry", "language"}
+SETTINGS_KEYS = {"task_geometry", "calendar_geometry", "todo_geometry", "language"}
 
 
 def data_dir():
@@ -78,6 +77,9 @@ class Widgets:
         self.settings = read_settings(folder / "preferences.json")
         self.jobs, self.results = queue.Queue(), queue.Queue()
         self.busy = False
+        self.after_success = None
+        self.todo_draft = tk.StringVar(root)
+        self.show_completed = False
         self.state = workspace.snapshot()
         self.error = ""
         self.selected = dt.date.today()
@@ -87,9 +89,10 @@ class Widgets:
         self.root.withdraw()
         self.make_window("TaskFlow", "task_geometry", "380x520+60+80")
         self.make_window("TaskFlow Calendar", "calendar_geometry", "380x560+470+80")
+        self.make_window("TaskFlow Todo", "todo_geometry", "380x460+880+80")
         threading.Thread(target=self.worker, daemon=True).start()
         self.render()
-        self.submit(self.workspace.sync)
+        self.submit(self.sync_all)
         self.root.after(150, self.drain)
         self.root.after(30000, self.poll)
 
@@ -121,7 +124,7 @@ class Widgets:
         header.pack(fill="x", padx=16, pady=(14, 8))
         self.label(header, title).pack(side="left")
         self.button(header, "TH / EN", self.toggle_language).pack(side="right")
-        self.button(header, "↻", lambda: self.submit(self.workspace.sync)).pack(side="right", padx=4)
+        self.button(header, "↻", lambda: self.submit(self.sync_all)).pack(side="right", padx=4)
         frame = tk.Frame(win, bg=self.bg)
         frame.pack(fill="both", expand=True, padx=16)
         footer = tk.Frame(win, bg=self.bg)
@@ -158,7 +161,7 @@ class Widgets:
             if name:
                 restored = read_settings(Path(name))
                 self.settings.update(restored)
-                for win, key in zip(self.windows, ["task_geometry", "calendar_geometry"]):
+                for win, key in zip(self.windows, ["task_geometry", "calendar_geometry", "todo_geometry"]):
                     if key in restored:
                         try:
                             win.geometry(restored[key])
@@ -183,25 +186,33 @@ class Widgets:
             finally:
                 del action
 
-    def submit(self, action):
+    def submit(self, action, on_success=None):
         if self.busy:
             return
         self.busy = True
         self.error = ""
+        self.after_success = on_success
         self.jobs.put(action)
 
     def drain(self):
         try:
             self.error = self.results.get_nowait()
             self.busy = False
+            if not self.error and self.after_success:
+                self.after_success()
+            self.after_success = None
             self.state = self.workspace.snapshot()
             self.render()
         except queue.Empty:
             pass
         self.root.after(150, self.drain)
 
+    def sync_all(self):
+        self.workspace.sync()
+        return self.workspace.sync_todos()
+
     def poll(self):
-        self.submit(self.workspace.sync)
+        self.submit(self.sync_all)
         self.root.after(30000, self.poll)
 
     def render(self):
@@ -222,13 +233,17 @@ class Widgets:
                 if not mail or not secret or self.busy:
                     return
                 password.delete(0, "end")
-                self.submit(lambda: self.workspace.login(mail, secret))
+                def sign_in():
+                    self.workspace.login(mail, secret)
+                    return self.workspace.sync_todos()
+                self.submit(sign_in)
             password.bind("<Return>", lambda _: login())
             self.button(frame, self.tr("เข้าสู่ระบบ", "Sign in"), login).pack(fill="x", pady=18)
             self.label(self.frames[1], self.tr("เข้าสู่ระบบใน widget TaskFlow ก่อน", "Sign in in the TaskFlow widget first."), wraplength=300).pack(pady=22)
         else:
             self.render_tasks(self.frames[0], self.state["tasks"])
             self.render_calendar(self.frames[1])
+            self.render_todos(self.frames[2])
         if self.error:
             for frame in self.frames:
                 self.label(frame, self.error, fg="#ffa18e", wraplength=300).pack(side="bottom", pady=8)
@@ -255,6 +270,41 @@ class Widgets:
             self.label(row, due, fg=self.accent).pack(anchor="w")
             if task.get("description"):
                 self.label(row, task["description"], fg=self.muted, wraplength=240, justify="left").pack(anchor="w")
+
+    def render_todos(self, frame):
+        self.label(frame, self.tr("จดไว้ก่อน ไม่ต้องกำหนดวัน", "A reminder, without a deadline"), fg=self.muted).pack(anchor="w", pady=8)
+        form = tk.Frame(frame, bg=self.bg)
+        form.pack(fill="x", pady=8)
+        entry = tk.Entry(form, textvariable=self.todo_draft, bg="#182018", fg=self.fg, insertbackground=self.fg)
+        entry.pack(side="left", fill="x", expand=True, ipady=8)
+        def add():
+            title = self.todo_draft.get().strip()
+            if not 1 <= len(title) <= 240:
+                return
+            self.submit(lambda: self.workspace.save_todo(title=title), lambda: self.todo_draft.set(""))
+        entry.bind("<Return>", lambda _: add())
+        self.button(form, self.tr("เพิ่ม", "Add"), add).pack(side="right", padx=(8,0))
+        def toggle_completed():
+            self.show_completed = not self.show_completed
+            self.render()
+        self.button(frame, self.tr("แสดง/ซ่อนที่เสร็จแล้ว", "Show/hide completed"), toggle_completed).pack(anchor="e", pady=4)
+        canvas = tk.Canvas(frame, bg=self.bg, highlightthickness=0, height=100)
+        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(fill="both", expand=True)
+        inner = tk.Frame(canvas, bg=self.bg)
+        item = canvas.create_window((0,0), window=inner, anchor="nw")
+        inner.bind("<Configure>", lambda _: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda event: canvas.itemconfigure(item, width=event.width))
+        canvas.configure(yscrollcommand=scrollbar.set)
+        visible = [todo for todo in self.state.get("todos", []) if self.show_completed or not todo["completed"]]
+        if not visible:
+            self.label(inner, self.tr("โล่งแล้ว จดเพิ่มได้เลย", "All clear. Add a reminder above.")).pack(pady=20)
+        for todo in visible:
+            row = tk.Frame(inner, bg=self.bg)
+            row.pack(fill="x", pady=8)
+            self.button(row, "↶" if todo["completed"] else "✓", lambda record=todo: self.submit(lambda: self.workspace.save_todo(todo_id=record["id"], completed=not record["completed"]))).pack(side="left", padx=(0,8))
+            self.label(row, todo["title"], wraplength=240, justify="left", fg=self.muted if todo["completed"] else self.fg).pack(side="left", fill="x", expand=True)
 
     def shift(self, amount):
         year, month = divmod(self.month.year * 12 + self.month.month - 1 + amount, 12)
@@ -300,7 +350,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--install", action="store_true")
     parser.add_argument("--uninstall", action="store_true")
-    parser.add_argument("--smoke-test", action="store_true", help="Construct both windows without connecting to the cloud, then exit")
+    parser.add_argument("--smoke-test", action="store_true", help="Construct all three windows without connecting to the cloud, then exit")
     args = parser.parse_args()
     if args.install:
         install_windows()
@@ -314,6 +364,7 @@ def main():
     workspace = Workspace(bundled_config(), folder / "state")
     if args.smoke_test:
         workspace.sync = workspace.snapshot  # No auth or network in smoke tests.
+        workspace.sync_todos = workspace.snapshot
     root = tk.Tk()
     callback_errors = []
     def callback_failed(kind, value, traceback):
@@ -326,6 +377,7 @@ def main():
         def preview_calendar():
             workspace.session = {"user": {"email": "smoke@example.invalid"}}
             workspace.tasks = [{"id": "smoke", "title": "TaskFlow calendar preview", "due_date": dt.date.today().isoformat(), "due_time": "18:00:00", "category": "Demo", "description": "No live account or network"}]
+            workspace.todos = [{"id": "smoke-todo", "title": "Undated Todo preview", "completed": False}]
             app.state = workspace.snapshot()
             app.render()
         root.after(200, preview_calendar)

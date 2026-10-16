@@ -11,7 +11,7 @@ import subprocess
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.0.0"
+VERSION = json.loads((ROOT / "package.json").read_text())["version"]
 
 
 def validate_public(config):
@@ -54,6 +54,10 @@ def build(output):
     tracked = subprocess.check_output(["git", "ls-files", "desktop/kde-widget", "desktop/release"], cwd=ROOT, text=True).splitlines()
     for filename in tracked:
         relative = Path(filename).relative_to("desktop")
+        if relative.name.startswith("test_"):
+            continue
+        if relative.parts[0] == "release" and relative.name not in {"portable.py", "public-settings.json", "configure_kde.py", "install_portable.py", "uninstall.sh"}:
+            continue
         target = folder / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / filename, target)
@@ -67,10 +71,29 @@ def build(output):
     return archive
 
 
+def windows_version_file(path):
+    version_tuple = tuple(int(part) for part in VERSION.split(".")) + (0,)
+    text = f"""VSVersionInfo(
+ ffi=FixedFileInfo(filevers={version_tuple!r}, prodvers={version_tuple!r}, mask=0x3f, flags=0, OS=0x40004, fileType=1, subtype=0, date=(0,0)),
+ kids=[StringFileInfo([StringTable('040904B0',[
+  StringStruct('CompanyName','Micosz'), StringStruct('ProductName','TaskFlow Widgets'),
+  StringStruct('FileVersion','{VERSION}'), StringStruct('ProductVersion','{VERSION}'),
+  StringStruct('OriginalFilename','TaskFlowWidget.exe')])]),
+  VarFileInfo([VarStruct('Translation',[1033,1200])])])
+"""
+    path.write_text(text, encoding="utf-8")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--windows-version-file", type=Path)
     args = parser.parse_args()
+    if args.windows_version_file:
+        windows_version_file(args.windows_version_file)
+        raise SystemExit(0)
+    if not args.output:
+        parser.error("--output is required for Linux bundles")
     args.output.mkdir(parents=True, exist_ok=True)
     archive = build(args.output)
     (args.output / "SHA256SUMS-Linux.txt").write_text(hashlib.sha256(archive.read_bytes()).hexdigest() + "  " + archive.name + "\n")
