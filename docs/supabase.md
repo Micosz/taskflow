@@ -84,6 +84,6 @@ Todo has a separate owner-scoped table and private `taskflow:todos:<user-id>` Br
 
 Apply `202611050001_add_task_event_type.sql` **before deploying** the calendar update. It adds `tasks.event_type` with six allowed values: `task`, `study`, `activity`, `exam`, `important`, and `holiday`. Existing rows default to `task`; course/project `category` values are unchanged. The previous app remains compatible with this additive migration.
 
-Guest records without a type display as Task and retain their other fields. Create/edit and local-to-cloud imports persist the type. Calendar filters affect the calendar and its next-event card only, not the underlying task list. Colors identify event types; deadline/completion status remains separate.
+Guest records without a type display as Task and retain their other fields. Create/edit and local-to-cloud imports persist the type. Calendar filters affect the calendar only, not the underlying task list. Colors identify event types; deadline/completion status remains separate.
 
 Smoke check after deployment: create an Exam, reload, change it to Activity, and verify the calendar filter and details. In cloud mode, repeat in two signed-in browser profiles to check persistence and realtime sync.

@@ -1045,7 +1045,20 @@ input[type="time"] {
   gap: 0.4rem;
 }
 
-.task-calendar__legend { margin-top: 1rem; }
+.task-calendar__legend { margin-top: 0.75rem; gap: 0.3rem; }
+
+/* Compact calendar filters; form choices keep their larger controls. */
+.task-calendar__legend .event-type-option {
+  min-height: 30px;
+  gap: 0.3rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.45rem;
+  font-size: 0.625rem;
+}
+
+@media (pointer: coarse) {
+  .task-calendar__legend .event-type-option { min-height: 44px; }
+}
 
 .event-type-option {
   display: inline-flex;
@@ -1123,50 +1136,6 @@ input[type="time"] {
   border-radius: 0.65rem;
   color: #c7d4bd;
   font-size: 0.75rem;
-}
-
-.task-calendar__next {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding: 0.8rem 1rem;
-  border: 1px solid #aaba9e28;
-  border-radius: 0.75rem;
-  background: #aaba9e0d;
-  text-align: left;
-}
-
-.task-calendar__next > span:first-child {
-  min-width: 0;
-}
-
-.task-calendar__eyebrow {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: #aaba9e;
-  font-size: 0.65rem;
-}
-
-.task-calendar__next strong {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.task-calendar__countdown {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.5rem;
-  color: #cee2b9;
-  font-size: 0.8rem;
-  font-weight: 600;
 }
 
 .task-calendar__navigation {
@@ -1261,8 +1230,6 @@ input[type="time"] {
 .task-calendar__day-note[data-completed] > span:last-child { text-decoration: line-through; }
 .task-calendar__more { color: #bfc1b8; font-size: 0.6rem; }
 .task-calendar__note[data-event-type] { border-left-color: var(--event-color); }
-.task-calendar__next[data-event-type] { border-color: color-mix(in srgb, var(--event-color) 35%, transparent); }
-.task-calendar__next .task-calendar__eyebrow { color: var(--event-color); }
 
 .task-calendar [data-status="overdue"] {
   color: #edaf9c;
@@ -1363,7 +1330,44 @@ input[type="time"] {
   outline-offset: 2px;
 }
 
+@media (min-width: 640px) {
+  .task-calendar__day-note {
+    align-items: flex-start;
+    padding: 4px;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+  }
+
+  .task-calendar__day-note .event-type-dot { margin-top: 0.3em; }
+
+  .task-calendar__day-note > span:last-child {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (min-width: 1024px) {
+  .editorial-workspace[data-calendar-layout] {
+    grid-template-columns: minmax(20rem, 0.7fr) minmax(0, 1.3fr);
+  }
+
+  .editorial-workspace[data-calendar-layout] .editorial-focus__content {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .editorial-workspace[data-calendar-layout] .editorial-focus__title {
+    font-size: clamp(2.5rem, 4vw, 4.75rem);
+    overflow-wrap: anywhere;
+  }
+
+  .editorial-workspace[data-calendar-layout] .editorial-planner {
+    padding-left: 1.5rem;
+  }
+
   .editorial-planner {
     display: block;
     min-width: 0;
@@ -1395,10 +1399,6 @@ input[type="time"] {
 }
 
 @media (max-width: 380px) {
-  .task-calendar__countdown {
-    font-size: 0.72rem;
-  }
-
   .task-calendar__note-top {
     flex-wrap: wrap;
     gap: 0.3rem;

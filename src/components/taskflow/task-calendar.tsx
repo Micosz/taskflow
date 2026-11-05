@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate, formatNumber, formatTaskCount, interpolate, type Locale, type TranslationMessages } from "@/i18n";
 import { fromDateKey, toDateKey, formatClockTime } from "@/lib/date";
-import { getCalendarDays, getCalendarTaskTiming, getNextCalendarTask, groupCalendarTasks } from "@/features/tasks/task-calendar";
+import { getCalendarDays, getCalendarTaskTiming, groupCalendarTasks } from "@/features/tasks/task-calendar";
 import { TASK_EVENT_TYPES, normalizeTaskEventType, type TaskEventType, type Task } from "@/types/task";
 
 interface TaskCalendarProps {
@@ -26,7 +26,6 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
   const filteredTasks = useMemo(() => tasks.filter((task) => eventFilter === "all" || normalizeTaskEventType(task.eventType) === eventFilter), [tasks, eventFilter]);
   const grouped = useMemo(() => groupCalendarTasks(filteredTasks), [filteredTasks]);
   const selectedTasks = grouped.get(selectedDay) ?? [];
-  const nextTask = getNextCalendarTask(filteredTasks, now);
   const copy = messages.calendar;
   const monthLabel = formatDate(`${monthKey}-01`, locale, { month: "long", year: "numeric" });
 
@@ -64,16 +63,6 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
           </button>
         ))}
       </div>
-
-      {nextTask && (
-        <button type="button" className="task-calendar__next" data-event-type={normalizeTaskEventType(nextTask.eventType)} onClick={() => {
-          setMonth(nextTask.dueDate.slice(0, 7));
-          setSelection(nextTask.dueDate);
-        }}>
-          <span><span className="task-calendar__eyebrow">{copy.nextEvent} · {messages.eventTypes[normalizeTaskEventType(nextTask.eventType)]}</span><strong>{nextTask.title}</strong></span>
-          <span className="task-calendar__countdown">{timingLabel(nextTask)}<ArrowUpRight size={14} aria-hidden="true" /></span>
-        </button>
-      )}
 
       <div className="task-calendar__navigation">
         <h3 aria-live="polite">{monthLabel}</h3>

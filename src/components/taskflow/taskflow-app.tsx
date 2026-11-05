@@ -550,6 +550,7 @@ export function TaskFlowApp() {
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -5 }}
                 transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 className="editorial-workspace mt-6 lg:mt-0"
+                data-calendar-layout={view === "active" || undefined}
               >
                 {now && (
                   <FocusHero
