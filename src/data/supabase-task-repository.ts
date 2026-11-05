@@ -14,7 +14,7 @@ import type {
   TaskRow,
   TaskUpdate,
 } from "@/lib/supabase/database.types";
-import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
+import { normalizeTaskEventType, type CreateTaskInput, type Task, type UpdateTaskInput } from "@/types/task";
 
 const TASK_TOPIC_PREFIX = "taskflow:tasks:";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -69,6 +69,7 @@ function toTask(row: TaskRow): Task {
     title: row.title,
     description: row.description ?? "",
     category: row.category,
+    eventType: normalizeTaskEventType(row.event_type),
     dueDate: row.due_date,
     // PostgreSQL can serialize `time` with seconds; the domain uses HH:mm.
     dueTime: row.due_time ? row.due_time.slice(0, 5) : null,
@@ -83,6 +84,7 @@ function createPayload(input: CreateTaskInput): TaskInsert {
     title: requireText(input.title, "title"),
     description: input.description?.trim() || null,
     category: requireText(input.category, "category"),
+    event_type: normalizeTaskEventType(input.eventType),
     priority: LEGACY_PRIORITY,
     due_date: requireDate(input.dueDate),
     due_time: normalizeTime(input.dueTime),
@@ -95,6 +97,7 @@ function createMigrationPayload(task: Task): TaskInsert {
     title: requireText(task.title, "title"),
     description: task.description.trim() || null,
     category: requireText(task.category, "category"),
+    event_type: normalizeTaskEventType(task.eventType),
     priority: LEGACY_PRIORITY,
     due_date: requireDate(task.dueDate),
     due_time: normalizeTime(task.dueTime),
@@ -106,6 +109,10 @@ function createMigrationPayload(task: Task): TaskInsert {
 
 function updatePayload(input: UpdateTaskInput): TaskUpdate {
   const payload: TaskUpdate = {};
+
+  if (input.eventType !== undefined) {
+    payload.event_type = normalizeTaskEventType(input.eventType);
+  }
 
   if (input.title !== undefined) {
     payload.title = requireText(input.title, "title");

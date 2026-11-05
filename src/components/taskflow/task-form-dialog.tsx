@@ -17,7 +17,7 @@ import {
   resolveTaskCategory,
 } from "@/features/courses/course-options";
 import { getCourseDisplayLabel, type Course } from "@/types/course";
-import type { CreateTaskInput, Task } from "@/types/task";
+import { TASK_EVENT_TYPES, normalizeTaskEventType, type CreateTaskInput, type Task } from "@/types/task";
 import { useDialogA11y } from "./use-dialog-a11y";
 
 interface TaskFormDialogProps {
@@ -38,6 +38,7 @@ function initialValues(task: Task | null): TaskFormValues {
         title: task.title,
         description: task.description,
         category: task.category,
+        eventType: normalizeTaskEventType(task.eventType),
         dueDate: task.dueDate,
         dueTime: task.dueTime ?? "",
       }
@@ -45,6 +46,7 @@ function initialValues(task: Task | null): TaskFormValues {
         title: "",
         description: "",
         category: "",
+        eventType: "task",
         dueDate: toDateKey(),
         dueTime: "",
       };
@@ -230,6 +232,21 @@ export function TaskFormDialog({
                   />
                   {fieldError("description")}
                 </label>
+
+                <fieldset aria-describedby={errors.eventType ? "eventType-error" : undefined}>
+                  <legend className="mb-2 text-sm font-medium text-[#d9dbee]">{messages.eventTypes.label}</legend>
+                  <div className="event-type-options">
+                    {TASK_EVENT_TYPES.map((type) => (
+                      <label key={type} className="event-type-option" data-event-type={type} data-selected={values.eventType === type || undefined}>
+                        <input className="sr-only" type="radio" name="eventType" value={type} checked={values.eventType === type} onChange={() => updateField("eventType", type)} />
+                        <span className="event-type-dot" aria-hidden="true" />
+                        {messages.eventTypes[type]}
+                        {values.eventType === type && <Check size={13} aria-hidden="true" />}
+                      </label>
+                    ))}
+                  </div>
+                  {fieldError("eventType")}
+                </fieldset>
 
                 <div>
                   <div className="block">

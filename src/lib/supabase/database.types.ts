@@ -1,3 +1,5 @@
+import type { TaskEventType } from "@/types/task";
+
 export type Json =
   | string
   | number
@@ -53,6 +55,7 @@ export type Database = {
           completed: boolean;
           created_at: string;
           description: string | null;
+          event_type: TaskEventType;
           due_date: string;
           due_time: string | null;
           id: string;
@@ -67,6 +70,7 @@ export type Database = {
           completed?: boolean;
           created_at?: string;
           description?: string | null;
+          event_type?: TaskEventType;
           due_date: string;
           due_time?: string | null;
           id?: string;
@@ -81,6 +85,7 @@ export type Database = {
           completed?: boolean;
           created_at?: string;
           description?: string | null;
+          event_type?: TaskEventType;
           due_date?: string;
           due_time?: string | null;
           id?: string;

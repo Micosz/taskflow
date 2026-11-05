@@ -62,6 +62,20 @@ function createStoredTask(): Task {
 }
 
 describe("LocalTaskRepository", () => {
+  it("persists event types through editing, reload, and the migration snapshot", async () => {
+    const storage = new MemoryStorage();
+    const repository = createRepository(storage);
+    const input = { title: "Final exam", category: "CS301", dueDate: "2026-11-10", eventType: "exam" as const };
+    const created = await repository.createTask(input);
+    expect((await createRepository(storage).getTask(created.id))?.eventType).toBe("exam");
+    await repository.updateTask(created.id, { eventType: "activity", title: "Study group" });
+    const reloaded = createRepository(storage);
+    expect(await reloaded.getTask(created.id)).toMatchObject({ eventType: "activity", category: "CS301", title: "Study group" });
+    expect((await reloaded.getMigrationTasks())[0].eventType).toBe("activity");
+    await reloaded.updateTask(created.id, { completed: true });
+    expect((await reloaded.getTask(created.id))?.eventType).toBe("activity");
+  });
+
   it("starts guest mode empty without creating sample tasks", async () => {
     const storage = new MemoryStorage();
 

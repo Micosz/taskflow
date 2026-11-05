@@ -15,9 +15,14 @@ const validValues: TaskFormValues = {
 };
 
 describe("priority-free task validation", () => {
+  it("preserves a chosen type and rejects unknown types", () => {
+    expect(toCreateTaskInput({ ...validValues, eventType: "exam" }).eventType).toBe("exam");
+    expect(validateTaskForm({ ...validValues, eventType: "invalid" as TaskFormValues["eventType"] })).toEqual({ eventType: "eventTypeInvalid" });
+  });
+
   it("creates valid task input without requiring or emitting priority", () => {
     expect(validateTaskForm(validValues)).toEqual({});
-    expect(toCreateTaskInput(validValues)).toEqual(validValues);
+    expect(toCreateTaskInput(validValues)).toEqual({ ...validValues, eventType: "task" });
     expect(toCreateTaskInput(validValues)).not.toHaveProperty("priority");
   });
 });

@@ -19,7 +19,7 @@ import {
   type Locale,
   type TranslationMessages,
 } from "@/i18n";
-import type { Task } from "@/types/task";
+import { normalizeTaskEventType, type Task } from "@/types/task";
 
 import { TaskCountdown } from "./task-countdown";
 import { useDialogA11y } from "./use-dialog-a11y";
@@ -130,6 +130,7 @@ export function TaskDetailDialog({
 
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
               <div className="flex flex-wrap items-center gap-2">
+                <span className="event-type-badge" data-event-type={normalizeTaskEventType(task.eventType)}><span className="event-type-dot" aria-hidden="true" />{messages.eventTypes[normalizeTaskEventType(task.eventType)]}</span>
                 <span
                   className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold ${
                     task.completed

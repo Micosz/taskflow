@@ -31,10 +31,15 @@ const english = {
     "toggle": "Mark or reopen: {title}"
 },
 
+  eventTypes: {
+    label: "Event type", all: "All types", filter: "Filter calendar by event type",
+    task: "Task", study: "Study", activity: "Activity", exam: "Exam", important: "Important date", holiday: "Holiday",
+  },
   calendar: {
     title: "Calendar & notes",
     subtitle: "All your events, on their due dates.",
     nextEvent: "Next event",
+    moreEvents: "+{count} more",
     previousMonth: "Previous month",
     nextMonth: "Next month",
     oneDayLeft: "1 day left",
@@ -171,6 +176,7 @@ const english = {
     close: "Close task form",
   },
   validation: {
+    eventTypeInvalid: "Choose a valid event type.",
     titleRequired: "Enter a task title.",
     titleTooLong: "Keep the title under {count} characters.",
     descriptionTooLong: "Keep the description under {count} characters.",
@@ -432,10 +438,15 @@ const thai: TranslationMessages = {
     "toggle": "ติ๊กเสร็จหรือเปิดใหม่: {title}"
 },
 
+  eventTypes: {
+    label: "ประเภทรายการ", all: "ทั้งหมด", filter: "กรองปฏิทินตามประเภทรายการ",
+    task: "งาน", study: "เรียน", activity: "กิจกรรม", exam: "สอบ", important: "วันสำคัญ", holiday: "วันหยุด",
+  },
   calendar: {
     title: "ปฏิทินและโน้ต",
     subtitle: "รวมทุก Event ตามวันที่กำหนดไว้",
     nextEvent: "Event ถัดไป",
+    moreEvents: "+อีก {count}",
     previousMonth: "เดือนก่อนหน้า",
     nextMonth: "เดือนถัดไป",
     oneDayLeft: "เหลืออีก 1 วัน",
@@ -572,6 +583,7 @@ const thai: TranslationMessages = {
     close: "ปิดแบบฟอร์มงาน",
   },
   validation: {
+    eventTypeInvalid: "เลือกประเภทรายการที่ถูกต้อง",
     titleRequired: "กรุณาใส่ชื่องาน",
     titleTooLong: "ชื่องานต้องไม่เกิน {count} ตัวอักษร",
     descriptionTooLong: "รายละเอียดต้องไม่เกิน {count} ตัวอักษร",

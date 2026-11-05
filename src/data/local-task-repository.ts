@@ -5,7 +5,7 @@ import {
   type TaskRepositoryListener,
   type Unsubscribe,
 } from "@/data/task-repository";
-import type { CreateTaskInput, Task, UpdateTaskInput } from "@/types/task";
+import { normalizeTaskEventType, type CreateTaskInput, type Task, type UpdateTaskInput } from "@/types/task";
 
 export const TASK_STORAGE_KEY = "taskflow:v1:tasks";
 
@@ -58,6 +58,7 @@ function normalizeStoredTask(value: unknown): Task | null {
     title: task.title,
     description: task.description,
     category: task.category,
+    ...(task.eventType === undefined ? {} : { eventType: normalizeTaskEventType(task.eventType) }),
     dueDate: task.dueDate,
     dueTime: task.dueTime as string | null,
     completed: task.completed,
@@ -218,6 +219,7 @@ export class LocalTaskRepository implements TaskRepository {
       title: requireText(input.title, "title"),
       description: input.description?.trim() ?? "",
       category: requireText(input.category, "category"),
+      eventType: normalizeTaskEventType(input.eventType),
       dueDate: requireDate(input.dueDate),
       dueTime: normalizeTime(input.dueTime),
       completed: false,
@@ -245,6 +247,7 @@ export class LocalTaskRepository implements TaskRepository {
     const current = tasks[index];
     const updated: Task = {
       ...current,
+      ...(input.eventType === undefined ? {} : { eventType: normalizeTaskEventType(input.eventType) }),
       ...(input.title === undefined
         ? {}
         : { title: requireText(input.title, "title") }),
