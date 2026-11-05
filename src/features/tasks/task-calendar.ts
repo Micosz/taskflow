@@ -3,10 +3,10 @@ import type { Task } from "@/types/task";
 import { getTaskDeadline } from "./task-countdown";
 import { sortTasks } from "./task-selectors";
 
-/** A complete Monday-first month, including adjacent days to fill each week. */
+/** A complete Sunday-first month, including adjacent days to fill each week. */
 export function getCalendarDays(monthKey: string): string[] {
   const first = fromDateKey(`${monthKey.slice(0, 7)}-01`);
-  const offset = (first.getDay() + 6) % 7;
+  const offset = first.getDay();
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const count = Math.ceil((offset + daysInMonth) / 7) * 7;
   return Array.from({ length: count }, (_, index) => {

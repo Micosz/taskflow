@@ -54,7 +54,8 @@ export function formatClockTime(time: string, locale: Locale): string {
   const [hour, minute] = time.split(":").map(Number);
   const date = new Date(2020, 0, 1, hour, minute);
   return new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(date);
 }

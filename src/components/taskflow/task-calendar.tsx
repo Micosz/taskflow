@@ -72,7 +72,7 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
         </div>
       </div>
       <div className="task-calendar__weekdays" aria-hidden="true">
-        {Array.from({ length: 7 }, (_, index) => <span key={index}>{formatDate(new Date(2026, 0, 5 + index), locale, { weekday: "short" })}</span>)}
+        {Array.from({ length: 7 }, (_, index) => <span key={index}>{formatDate(new Date(2026, 0, 4 + index), locale, { weekday: "short" })}</span>)}
       </div>
       <div className="task-calendar__grid" role="group" aria-label={monthLabel}>
         {days.map((day) => {
