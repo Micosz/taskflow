@@ -164,8 +164,9 @@ export function formatTime(value: string, locale: Locale): string {
   date.setHours(hour, minute, 0, 0);
 
   return new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(date);
 }
 

@@ -13,10 +13,20 @@ const now = new Date(2026, 8, 6, 12);
 describe("calendar dates", () => {
   it("fills a six-week month and crosses the year boundary", () => {
     const days = getCalendarDays("2027-01");
-    expect(days).toHaveLength(35);
-    expect(days[0]).toBe("2026-12-28");
-    expect(days.at(-1)).toBe("2027-01-31");
-    expect(getCalendarDays("2026-03")).toHaveLength(42);
+    expect(days).toHaveLength(42);
+    expect(days[0]).toBe("2026-12-27");
+    expect(days.at(-1)).toBe("2027-02-06");
+    expect(getCalendarDays("2026-03")).toHaveLength(35);
+  });
+  it("starts on Sunday and aligns every complete week through Saturday", () => {
+    for (const month of ["2026-02", "2026-11", "2027-01", "2028-02"]) {
+      const days = getCalendarDays(month);
+      expect(new Date(`${days[0]}T12:00:00`).getDay()).toBe(0);
+      expect(new Date(`${days.at(-1)}T12:00:00`).getDay()).toBe(6);
+      expect(days.length % 7).toBe(0);
+    }
+    expect(getCalendarDays("2026-11")[0]).toBe("2026-11-01");
+    expect(getCalendarDays("2026-02")).toHaveLength(28);
   });
   it("includes leap day and never invents dates in February", () => {
     expect(getCalendarDays("2028-02")).toContain("2028-02-29");

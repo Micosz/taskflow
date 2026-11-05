@@ -9,6 +9,7 @@ import {
   type TaskFormErrors,
   type TaskFormValues,
 } from "@/features/tasks/task-validation";
+import { formatDateInput, parseDateInput, normalizeTimeInput } from "@/features/tasks/task-date-input";
 import { toDateKey } from "@/lib/date";
 import { interpolate, type TranslationMessages } from "@/i18n";
 import {
@@ -65,6 +66,10 @@ export function TaskFormDialog({
 }: TaskFormDialogProps) {
   const reduceMotion = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const dateInputId = useId();
+  const datePickerRef = useRef<HTMLInputElement>(null);
+  const dateTextRef = useRef<HTMLInputElement>(null);
+  const [dateText, setDateText] = useState(() => formatDateInput(task?.dueDate ?? toDateKey()));
   const titleId = useId();
   const descriptionId = useId();
   const [values, setValues] = useState<TaskFormValues>(() => ({ ...initialValues(task), category: task?.category ?? defaultCategory }));
@@ -105,10 +110,12 @@ export function TaskFormDialog({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const rawDate = String(formData.get("dueDate") ?? dateText);
+    const parsedDate = parseDateInput(rawDate);
     const submittedValues = {
       ...values,
-      dueDate: String(formData.get("dueDate") ?? values.dueDate),
-      dueTime: String(formData.get("dueTime") ?? values.dueTime),
+      dueDate: parsedDate ?? "",
+      dueTime: normalizeTimeInput(String(formData.get("dueTime") ?? values.dueTime)),
       category: resolveTaskCategory(
         courses,
         selectedCourseId,
@@ -117,6 +124,7 @@ export function TaskFormDialog({
       ),
     };
     const nextErrors = validateTaskForm(submittedValues);
+    if (rawDate.trim() && parsedDate === null) nextErrors.dueDate = "dueDateInvalid";
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       const firstField = Object.keys(nextErrors)[0];
@@ -319,22 +327,60 @@ export function TaskFormDialog({
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-2 flex items-center gap-2 text-sm font-medium text-[#d9dbee]">
+                  <div>
+                    <label htmlFor={dateInputId} className="mb-2 flex items-center gap-2 text-sm font-medium text-[#d9dbee]">
                       <CalendarDays aria-hidden="true" size={15} className="text-violet-300" />
                       {messages.form.dueDateLabel}
-                    </span>
-                    <input
-                      type="date"
-                      name="dueDate"
-                      value={values.dueDate}
-                      onChange={(event) => updateField("dueDate", event.target.value)}
-                      aria-invalid={Boolean(errors.dueDate)}
-                      aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
-                      className="form-field"
-                    />
+                    </label>
+                    <div className="relative">
+                      <input
+                        ref={dateTextRef}
+                        id={dateInputId}
+                        type="text"
+                        inputMode="numeric"
+                        name="dueDate"
+                        placeholder="DD/MM/YYYY"
+                        maxLength={10}
+                        value={dateText}
+                        onChange={(event) => {
+                          setDateText(event.target.value);
+                          updateField("dueDate", parseDateInput(event.target.value) ?? "");
+                        }}
+                        onBlur={() => {
+                          const parsed = parseDateInput(dateText);
+                          if (parsed) setDateText(formatDateInput(parsed));
+                        }}
+                        aria-invalid={Boolean(errors.dueDate)}
+                        aria-describedby={`dueDate-hint${errors.dueDate ? " dueDate-error" : ""}`}
+                        className="form-field pr-12"
+                      />
+                      <input
+                        ref={datePickerRef}
+                        type="date"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        value={values.dueDate}
+                        onChange={(event) => {
+                          updateField("dueDate", event.target.value);
+                          setDateText(formatDateInput(event.target.value));
+                        }}
+                        className="sr-only"
+                      />
+                      <button
+                        type="button"
+                        aria-label={messages.form.chooseDate}
+                        onClick={() => {
+                          if (datePickerRef.current?.showPicker) datePickerRef.current.showPicker();
+                          else dateTextRef.current?.focus();
+                        }}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-[#aeb2c9] hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+                      >
+                        <CalendarDays size={17} aria-hidden="true" />
+                      </button>
+                    </div>
+                    <p id="dueDate-hint" className="mt-1.5 text-xs text-[#aeb2c9]">{messages.form.dateFormatHint}</p>
                     {fieldError("dueDate")}
-                  </label>
+                  </div>
 
                   <label className="block">
                     <span className="mb-2 flex items-center justify-between text-sm font-medium text-[#d9dbee]">
@@ -345,14 +391,19 @@ export function TaskFormDialog({
                       <span className="text-xs font-normal text-[#737997]">{messages.form.optional}</span>
                     </span>
                     <input
-                      type="time"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="HH:mm"
+                      maxLength={5}
                       name="dueTime"
                       value={values.dueTime}
                       onChange={(event) => updateField("dueTime", event.target.value)}
+                      onBlur={() => updateField("dueTime", normalizeTimeInput(values.dueTime))}
                       aria-invalid={Boolean(errors.dueTime)}
-                      aria-describedby={errors.dueTime ? "dueTime-error" : undefined}
+                      aria-describedby={`dueTime-hint${errors.dueTime ? " dueTime-error" : ""}`}
                       className="form-field"
                     />
+                    <span id="dueTime-hint" className="mt-1.5 block text-xs text-[#aeb2c9]">{messages.form.timeFormatHint}</span>
                     {fieldError("dueTime")}
                   </label>
                 </div>
