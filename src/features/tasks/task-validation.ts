@@ -1,5 +1,5 @@
 import { isValidDateKey } from "@/lib/date";
-import type { CreateTaskInput } from "@/types/task";
+import { isTaskEventType, normalizeTaskEventType, type TaskEventType, type CreateTaskInput } from "@/types/task";
 
 export const TASK_FORM_LIMITS = {
   title: 160,
@@ -11,11 +11,13 @@ export interface TaskFormValues {
   title: string;
   description: string;
   category: string;
+  eventType?: TaskEventType;
   dueDate: string;
   dueTime: string;
 }
 
 export type TaskFormErrorCode =
+  | "eventTypeInvalid"
   | "titleRequired"
   | "titleTooLong"
   | "descriptionTooLong"
@@ -31,6 +33,7 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export function validateTaskForm(values: TaskFormValues): TaskFormErrors {
   const errors: TaskFormErrors = {};
+  if (values.eventType !== undefined && !isTaskEventType(values.eventType)) errors.eventType = "eventTypeInvalid";
   const title = values.title.trim();
   const category = values.category.trim();
 
@@ -61,6 +64,7 @@ export function toCreateTaskInput(values: TaskFormValues): CreateTaskInput {
     title: values.title.trim(),
     description: values.description.trim(),
     category: values.category.trim(),
+    eventType: normalizeTaskEventType(values.eventType),
     dueDate: values.dueDate,
     dueTime: values.dueTime || null,
   };

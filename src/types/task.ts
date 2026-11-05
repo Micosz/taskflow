@@ -12,6 +12,18 @@ export type TaskFilter = TaskView;
 export type TaskStatus = "active" | "completed";
 export type TaskCategory = string;
 
+export const TASK_EVENT_TYPES = ["task", "study", "activity", "exam", "important", "holiday"] as const;
+export type TaskEventType = (typeof TASK_EVENT_TYPES)[number];
+
+export function isTaskEventType(value: unknown): value is TaskEventType {
+  return TASK_EVENT_TYPES.some((type) => type === value);
+}
+
+/** Historical records without a type remain ordinary tasks. */
+export function normalizeTaskEventType(value: unknown): TaskEventType {
+  return isTaskEventType(value) ? value : "task";
+}
+
 /** Calendar date in the user's local timezone, serialized as YYYY-MM-DD. */
 export type TaskDate = string;
 
@@ -23,6 +35,7 @@ export interface Task {
   title: string;
   description: string;
   category: TaskCategory;
+  eventType?: TaskEventType;
   dueDate: TaskDate;
   dueTime: TaskTime;
   completed: boolean;
@@ -34,6 +47,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   category: TaskCategory;
+  eventType?: TaskEventType;
   dueDate: TaskDate;
   dueTime?: TaskTime;
 }
@@ -44,6 +58,7 @@ export type UpdateTaskInput = Partial<
     | "title"
     | "description"
     | "category"
+    | "eventType"
     | "dueDate"
     | "dueTime"
     | "completed"

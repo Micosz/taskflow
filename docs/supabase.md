@@ -6,7 +6,7 @@ To prepare a Supabase project:
 
 1. Create a project and enable email/password authentication.
 2. Copy `.env.example` to `.env.local` and add the project URL plus a publishable key.
-3. Apply every file in `supabase/migrations/` in filename order: tasks, task-import keys, Saved Courses, then undated Todo. The Todo migration depends on the task timestamp function.
+3. Apply every file in `supabase/migrations/` in filename order: tasks, task-import keys, Saved Courses, undated Todo, then calendar event types. The Todo migration depends on the task timestamp function.
 4. In Supabase Realtime settings, disable **Allow public access** so private channels must pass authorization.
 5. In Auth URL Configuration, add the local and deployed TaskFlow URLs to the allowed redirect URLs and set the production Site URL.
 6. Configure email confirmation according to the sign-up behavior you want.
@@ -79,3 +79,11 @@ supabase db push
 The generated-style TypeScript database contract is in `src/lib/supabase/database.types.ts`. Regenerate it after future schema changes. Normal task and course creation omit `user_id` and let PostgreSQL default it from `auth.uid()`; migration ownership also remains protected by each INSERT `WITH CHECK` policy.
 
 Todo has a separate owner-scoped table and private `taskflow:todos:<user-id>` Broadcast topic. Todo creation/import explicitly supplies the captured user ID, so stale requests fail RLS after an account switch. Guest Todo imports use their own explicit action and verify cloud content before removing unchanged local entries.
+
+## Calendar event types
+
+Apply `202611050001_add_task_event_type.sql` **before deploying** the calendar update. It adds `tasks.event_type` with six allowed values: `task`, `study`, `activity`, `exam`, `important`, and `holiday`. Existing rows default to `task`; course/project `category` values are unchanged. The previous app remains compatible with this additive migration.
+
+Guest records without a type display as Task and retain their other fields. Create/edit and local-to-cloud imports persist the type. Calendar filters affect the calendar and its next-event card only, not the underlying task list. Colors identify event types; deadline/completion status remains separate.
+
+Smoke check after deployment: create an Exam, reload, change it to Activity, and verify the calendar filter and details. In cloud mode, repeat in two signed-in browser profiles to check persistence and realtime sync.
