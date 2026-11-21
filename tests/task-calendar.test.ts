@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCalendarDays, getCalendarTaskTiming, getNextCalendarTask, groupCalendarTasks } from "@/features/tasks/task-calendar";
+import { getCalendarDays, getCalendarKeyTarget, getCalendarTaskTiming, getNextCalendarTask, groupCalendarTasks } from "@/features/tasks/task-calendar";
 import { getDayDifference } from "@/lib/date";
 import type { Task } from "@/types/task";
 
@@ -36,6 +36,26 @@ describe("calendar dates", () => {
     expect(getDayDifference("2027-01-01", new Date(2026, 11, 31, 23, 59))).toBe(1);
     expect(getDayDifference("2026-03-09", new Date(2026, 2, 7, 12))).toBe(2);
     expect(getCalendarTaskTiming(task({ dueDate: "2026-09-08" }), now)).toEqual({ days: 2, status: "future" });
+  });
+});
+
+describe("calendar keyboard navigation", () => {
+  it.each([
+    ["2026-12-31", "ArrowRight", "2027-01-01"],
+    ["2027-01-01", "ArrowLeft", "2026-12-31"],
+    ["2027-01-01", "ArrowUp", "2026-12-25"],
+    ["2027-01-01", "ArrowDown", "2027-01-08"],
+    ["2027-01-01", "Home", "2026-12-27"],
+    ["2027-01-01", "End", "2027-01-02"],
+    ["2028-03-31", "PageUp", "2028-02-29"],
+    ["2027-01-31", "PageDown", "2027-02-28"],
+  ])("moves from %s with %s to %s", (day, key, target) => {
+    expect(getCalendarKeyTarget(day, key)).toBe(target);
+  });
+  it("clamps leap day when paging by year and leaves Tab to the browser", () => {
+    expect(getCalendarKeyTarget("2028-02-29", "PageDown", true)).toBe("2029-02-28");
+    expect(getCalendarKeyTarget("2028-02-29", "PageUp", true)).toBe("2027-02-28");
+    expect(getCalendarKeyTarget("2026-11-21", "Tab")).toBeNull();
   });
 });
 

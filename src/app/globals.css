@@ -945,7 +945,7 @@ input[type="time"] {
   color: #b3b9aa;
 }
 
-.task-calendar__weekdays, .task-calendar__grid {
+.task-calendar__weekdays, .task-calendar__week {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 3px;
@@ -991,7 +991,7 @@ input[type="time"] {
   font-weight: 700;
 }
 
-.task-calendar__day[aria-pressed="true"] {
+[role="gridcell"][aria-selected="true"] > .task-calendar__day {
   border-color: #b9cda780;
   background: #b9cda714;
 }

@@ -72,3 +72,37 @@ test("the phone calendar has its own tab and preserves an unfinished entry", asy
   await expect(calendar).toBeVisible();
   await expect(calendar.locator(".task-calendar__day:not([data-outside])")).toHaveCount(31);
 });
+
+test("one Tab enters the month and the next Tab reaches the selected day's notes", async ({ page }) => {
+  const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+  await entry.fill("ทบทวน CS264 พรุ่งนี้");
+  await entry.press("Enter");
+  await expect(entry).toHaveValue("");
+  const calendar = page.locator(".task-calendar");
+  await calendar.locator(".task-calendar__legend button").last().press("Tab");
+  await expect(calendar.locator('[aria-current="date"]')).toBeFocused();
+  const grid = calendar.getByRole("grid");
+  await expect(grid.getByRole("columnheader")).toHaveCount(7);
+  await expect(grid.locator('button[tabindex="0"]')).toHaveCount(1);
+  await page.keyboard.press("ArrowRight");
+  const selected = grid.getByRole("gridcell", { selected: true }).getByRole("button");
+  await expect(selected).toBeFocused();
+  await expect(selected).toHaveAccessibleName(/22 พฤศจิกายน/);
+  await page.keyboard.press("Tab");
+  const note = calendar.locator(".task-calendar__note");
+  await expect(note).toBeFocused();
+  await note.press("Enter");
+  await expect(page.getByRole("dialog")).toContainText("ทบทวน");
+  await page.keyboard.press("Escape");
+  await expect(note).toBeFocused();
+  await note.press("Shift+Tab");
+  await expect(selected).toBeFocused();
+  await page.keyboard.press("PageDown");
+  await expect(selected).toBeFocused();
+  await expect(selected).toHaveAccessibleName(/22 ธันวาคม/);
+  await page.keyboard.press("Home");
+  await expect(selected).toHaveAccessibleName(/20 ธันวาคม/);
+  await calendar.getByRole("button", { name: "เดือนถัดไป" }).click();
+  await expect(calendar.getByRole("button", { name: "เดือนถัดไป" })).toBeFocused();
+  await expect(selected).toHaveAccessibleName(/1 มกราคม/);
+});
