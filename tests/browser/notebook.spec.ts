@@ -159,6 +159,60 @@ for (const example of [
   });
 }
 
+for (const example of [
+  { kind: "Buddhist year on desktop", date: "3 ธันวาคม 2569", selected: "03/12/2026", stored: "2026-12-03", width: 1280 },
+  { kind: "Gregorian year on a phone", date: "3 ธันวาคม ค.ศ. 2026", selected: "05/12/2026", stored: "2026-12-05", width: 390 },
+]) {
+  test(`a full Thai date with a ${example.kind} requires an explicit due date`, async ({ page }) => {
+    await page.setViewportSize({ width: example.width, height: 844 });
+    const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+    const title = "ส่งรายงาน วันพฤหัสบดี " + example.date;
+    const sentence = "ส่งรายงาน CS361 วันพฤหัสบดี " + example.date + " 23:59";
+    await entry.fill(sentence);
+    await expect(entry).toHaveAccessibleDescription(/กรอกวันส่ง/);
+    const preview = page.locator(".quick-entry__preview");
+    await expect(preview).toContainText(example.date);
+    await expect(preview.getByRole("button", { name: /เลือกวันส่ง/ })).toContainText("23:59");
+    await entry.press("Enter");
+    const dialog = page.getByRole("dialog");
+    const date = dialog.locator('input[name="dueDate"]');
+    await expect(date).toBeFocused();
+    await expect(date).toHaveValue("");
+    await expect(dialog.locator("#dueDate-hint")).toContainText(example.date);
+    await expect(date).toHaveAccessibleDescription(/กรอกวันส่ง/);
+    await expect(dialog.locator('input[name="title"]')).toHaveValue(title);
+    await expect(dialog.locator('input[name="dueTime"]')).toHaveValue("23:59");
+    await date.press("Escape");
+    await expect(entry).toHaveValue(sentence);
+    await expect(entry).toBeFocused();
+    await entry.press("Enter");
+    await date.press("Enter");
+    await expect(date).toHaveAttribute("aria-invalid", "true");
+    expect(await savedTasks(page)).toEqual([]);
+    await date.fill(example.selected);
+    await date.press("Enter");
+    await expect(entry).toHaveValue("");
+    await expect(entry).toBeFocused();
+    await page.reload();
+    expect(await savedTasks(page)).toEqual([expect.objectContaining({
+      title, category: "CS361", dueDate: example.stored, dueTime: "23:59",
+    })]);
+  });
+}
+
+test("a full Thai date inside a quoted book title keeps the explicit ISO deadline", async ({ page }) => {
+  const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+  const title = "อ่าน “3 ธันวาคม 2569”";
+  await entry.fill(title + " CS361 2026-12-03 23:59");
+  await expect(page.locator(".quick-entry__preview")).toContainText("3 ธ.ค.");
+  await entry.press("Enter");
+  await expect(entry).toHaveValue("");
+  await page.reload();
+  expect(await savedTasks(page)).toEqual([expect.objectContaining({
+    title, category: "CS361", dueDate: "2026-12-03", dueTime: "23:59",
+  })]);
+});
+
 test("the phone calendar has its own tab and preserves an unfinished entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const sentence = "ส่งแลบ CS264 วันศุกร์ 2026-12-04";

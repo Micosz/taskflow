@@ -150,6 +150,52 @@ describe("one-line notebook entries", () => {
     expect(parse("ส่ง CS264 31/02/2026").dueDate).toBe("");
     expect(validateTaskForm(parse("ส่ง CS264 วันนี้ 29:77"))).toHaveProperty("dueTime");
   });
+  it.each([
+    "3 ธันวาคม 2569", "3 ธันวาคม 2026", "๓ ธันวาคม พ.ศ. ๒๕๖๙", "03 ธันวาคม ค.ศ. 2026",
+    "3 ธันวาคม พุทธศักราช 2569", "3 ธันวาคม คริสต์ศักราช 2026", "31 กุมภาพันธ์ 2569",
+  ])("requires a due date choice for the written Thai date %s", (date) => {
+    const title = "ส่งรายงาน วันพฤหัสบดี " + date;
+    const draft = parse("CS361 " + title + " 23:59");
+    expect(draft).toMatchObject({
+      title, category: "CS361", dueDate: "", dueTime: "23:59", dateConflict: { message: "thaiWrittenDate", date },
+    });
+    expect(validateTaskForm(draft).dueDate).toBe("dueDateRequired");
+  });
+  it("recognizes all twelve full Thai month names without requiring a weekday", () => {
+    const months = new Intl.DateTimeFormat("th-TH-u-ca-gregory", { month: "long", timeZone: "UTC" });
+    for (let month = 0; month < 12; month++) {
+      const date = "3 " + months.format(new Date(Date.UTC(2026, month, 3))) + " 2026";
+      expect(parse("อ่าน CS361 " + date).dateConflict, date).toEqual({ message: "thaiWrittenDate", date });
+    }
+  });
+  it.each([
+    "อ่านวารสารเดือนธันวาคม", "รายงาน ธันวาคม 2569", "อ่าน “3 ธันวาคม 2569”",
+    "วารสาร EP3 ธันวาคม 2569", "ชุด 123 ธันวาคม 2569", "รหัส 3 ธันวาคม 25690",
+  ])("keeps the ISO date when %s is title text", (title) => {
+    expect(parse("CS361 " + title + " 2026-12-03 23:59")).toMatchObject({
+      title, dueDate: "2026-12-03", dueTime: "23:59", dateConflict: null,
+    });
+  });
+  it("requires a date phrase present in the original input, separate from an ISO date", () => {
+    expect(parse("สรุป 3 CS361 ธันวาคม 2569 พรุ่งนี้")).toMatchObject({
+      title: "สรุป 3 ธันวาคม 2569", dueDate: "2026-11-22", dateConflict: null,
+    });
+    expect(parse("CS361 2026-12-03 ธันวาคม 2569")).toMatchObject({
+      title: "ธันวาคม 2569", dueDate: "2026-12-03", dateConflict: null,
+    });
+  });
+  it("keeps competing ISO and Thai dates and skips the quoted date in the title", () => {
+    const title = 'อ่าน "2 ธันวาคม 2569" 2026-12-01 ถึง 3 ธันวาคม 2569';
+    expect(parse("CS361 " + title + " บ่ายสอง")).toMatchObject({
+      title, dueDate: "", dueTime: "14:00", dateConflict: { message: "thaiWrittenDate", date: "3 ธันวาคม 2569" },
+    });
+  });
+  it("leaves both ends of a written Thai date range in the title for review", () => {
+    const title = "เปิดรับ 1 ธันวาคม 2569 ถึง 3 ธันวาคม 2569 วันพุธ";
+    expect(parse(title + " CS361 17:30")).toMatchObject({
+      title, dueDate: "", dueTime: "17:30", dateConflict: { message: "thaiWrittenDate", date: "1 ธันวาคม 2569" },
+    });
+  });
   it("retains the draft title and crosses month and year boundaries", () => {
     expect(parseQuickEntry("งาน CS264 พรุ่งนี้บ่ายสอง", courses, new Date(2026, 11, 31))).toMatchObject({ title: "งาน", dueDate: "2027-01-01" });
     expect(parse("Design studio sketch tomorrow")).toMatchObject({ category: "Design studio", title: "sketch" });

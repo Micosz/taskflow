@@ -7,6 +7,15 @@ const relativeDays: Record<string, number> = {
   วันนี้: 0, พรุ่งนี้: 1, มะรืน: 2, มะรืนนี้: 2, today: 0, tomorrow: 1,
 };
 const weekdays = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+const thaiMonthNames = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+].join("|");
+const fullThaiDates = new RegExp(
+  String.raw`(?<![\p{N}\p{Script=Latin}_])[0-9๐-๙]{1,2}\s+(?:${thaiMonthNames})\s+` +
+  String.raw`(?:(?:พ\.ศ\.|ค\.ศ\.|พุทธศักราช|คริสต์ศักราช)\s*)?[0-9๐-๙]{4}(?![\p{N}\p{Script=Latin}_])`,
+  "gu",
+);
 const numbers = ["", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า", "สิบ", "สิบเอ็ด"];
 const hourWords = "(สิบเอ็ด|สิบ|เก้า|แปด|เจ็ด|หก|ห้า|สี่|สาม|สอง|หนึ่ง|\\d{1,2})";
 type Found = { match: { index: number; 0: string }; value: string };
@@ -16,6 +25,7 @@ export interface QuickEntryDraft extends TaskFormValues {
   dateConflict:
     | { message: "dateConflict"; weekday: string; date: string }
     | { message: "multipleDates"; firstDate: string; secondDate: string }
+    | { message: "thaiWrittenDate"; date: string }
     | { message: "unclearQuotes" }
     | null;
 }
@@ -87,6 +97,14 @@ function readDate(
       remaining: text, dueDate: "",
       dateConflict: { message: "multipleDates", firstDate: firstWritten[2], secondDate: secondWritten[2] },
     };
+  }
+
+  // Check the whole phrase as typed, excluding a day already inside a numeric date.
+  const phraseSource = firstWritten ? removeMatch(source, firstWritten) : source;
+  for (const match of phraseSource.matchAll(fullThaiDates)) {
+    if (text.startsWith(match[0], match.index)) {
+      return { remaining: text, dueDate: "", dateConflict: { message: "thaiWrittenDate", date: match[0] } };
+    }
   }
 
   // Only unquoted tokens can supply or qualify a due date.
