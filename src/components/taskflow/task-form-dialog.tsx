@@ -25,6 +25,7 @@ interface TaskFormDialogProps {
   open: boolean;
   task: Task | null;
   defaultCategory?: string;
+  draft?: TaskFormValues | null;
   courses: readonly Course[];
   courseStatus: "loading" | "ready" | "error";
   messages: TranslationMessages;
@@ -57,6 +58,7 @@ export function TaskFormDialog({
   open,
   task,
   defaultCategory = "",
+  draft = null,
   courses,
   courseStatus,
   messages,
@@ -69,16 +71,17 @@ export function TaskFormDialog({
   const dateInputId = useId();
   const datePickerRef = useRef<HTMLInputElement>(null);
   const dateTextRef = useRef<HTMLInputElement>(null);
-  const [dateText, setDateText] = useState(() => formatDateInput(task?.dueDate ?? toDateKey()));
+  const startingValues = draft ?? { ...initialValues(task), category: task?.category ?? defaultCategory };
+  const [dateText, setDateText] = useState(() => formatDateInput(startingValues.dueDate));
   const titleId = useId();
   const descriptionId = useId();
-  const [values, setValues] = useState<TaskFormValues>(() => ({ ...initialValues(task), category: task?.category ?? defaultCategory }));
-  const initialCourse = findCourseForCategory(courses, task?.category ?? defaultCategory);
+  const [values, setValues] = useState<TaskFormValues>(startingValues);
+  const initialCourse = findCourseForCategory(courses, startingValues.category);
   const [selectedCourseId, setSelectedCourseId] = useState(
-    initialCourse?.id ?? (task || defaultCategory || courses.length === 0 ? OTHER_COURSE_OPTION : ""),
+    initialCourse?.id ?? (task || startingValues.category || courses.length === 0 ? OTHER_COURSE_OPTION : ""),
   );
   const [customCategory, setCustomCategory] = useState(
-    initialCourse ? "" : task?.category ?? defaultCategory,
+    initialCourse ? "" : startingValues.category,
   );
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);

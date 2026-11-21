@@ -15,6 +15,7 @@ import type { Task } from "@/types/task";
 
 interface TaskCountdownProps {
   task: Task;
+  compact?: boolean;
   locale: Locale;
   messages: TranslationMessages;
 }
@@ -27,13 +28,13 @@ const urgencyStyle: Record<CountdownUrgency, string> = {
   overdue: "border-rose-300/20 bg-rose-300/[0.08] text-rose-200",
 };
 
-export function TaskCountdown({ task, locale, messages }: TaskCountdownProps) {
+export function TaskCountdown({ task, locale, messages, compact }: TaskCountdownProps) {
   if (task.completed || !task.dueDate) return null;
 
-  return <ActiveTaskCountdown task={task} locale={locale} messages={messages} />;
+  return <ActiveTaskCountdown task={task} locale={locale} messages={messages} compact={compact} />;
 }
 
-function ActiveTaskCountdown({ task, locale, messages }: TaskCountdownProps) {
+function ActiveTaskCountdown({ task, locale, messages, compact }: TaskCountdownProps) {
   const now = useNow();
   const deadline = useMemo(
     () => getTaskDeadline({ dueDate: task.dueDate, dueTime: task.dueTime }),
@@ -65,7 +66,12 @@ function ActiveTaskCountdown({ task, locale, messages }: TaskCountdownProps) {
     );
   }
 
-  const duration = formatCountdown(countdown.parts, messages.countdown.units);
+  const { days, hours, minutes, seconds } = countdown.parts;
+  const units = messages.countdown.units;
+  const compactDuration = days ? `${days} ${messages.notebook.dayUnit} ${hours} ${units.hours}`
+    : hours ? `${hours} ${units.hours} ${minutes} ${units.minutes}`
+    : minutes ? `${minutes} ${units.minutes}` : `${seconds} ${units.seconds}`;
+  const duration = compact ? compactDuration : formatCountdown(countdown.parts, units);
   const visualLabel = interpolate(
     countdown.status === "overdue"
       ? messages.countdown.overdueBy

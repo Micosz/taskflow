@@ -50,7 +50,7 @@ export function TodoPanel({ userId, client, enabled, locale, messages, onLocaleC
     onUpdate={(value) => run(() => manager.updateTodo(item.id, value))}
     onDelete={() => run(() => manager.deleteTodo(item.id))} />;
   return (
-    <section aria-labelledby="todo-heading" className="mx-auto w-full max-w-3xl py-5 sm:py-8 lg:py-12">
+    <section aria-labelledby="todo-heading" className="todo-page mx-auto w-full max-w-3xl py-5 sm:py-8 lg:py-12">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div><h1 id="todo-heading" className="text-3xl font-medium tracking-tight text-[#f1efe7]">{copy.title}</h1>
           <p className="mt-3 text-sm leading-relaxed text-[#b4bdb0]">{copy.subtitle}</p>

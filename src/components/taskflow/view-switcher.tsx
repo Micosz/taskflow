@@ -7,17 +7,19 @@ interface ViewSwitcherProps {
   counts: Record<TaskView, number>;
   locale: Locale;
   messages: TranslationMessages;
+  calendarActive: boolean;
+  onCalendar: () => void;
   onChange: (view: TaskView) => void;
 }
 
-export function ViewSwitcher({ view, counts, locale, messages, onChange }: ViewSwitcherProps) {
+export function ViewSwitcher({ view, counts, locale, messages, onChange, calendarActive, onCalendar }: ViewSwitcherProps) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <nav aria-label={messages.navigation.label} className="-mx-4 overflow-x-auto px-4 pb-1 lg:hidden">
+    <nav aria-label={messages.navigation.label} className="mobile-view-tabs -mx-4 overflow-x-auto px-4 pb-1 lg:hidden">
       <div className="flex min-w-max gap-2">
         {TASK_VIEWS.filter((option) => option !== "upcoming" && option !== "overdue").map((option) => {
-          const active = option === view;
+          const active = !calendarActive && option === view;
           return (
             <motion.button
               key={option}
@@ -40,6 +42,7 @@ export function ViewSwitcher({ view, counts, locale, messages, onChange }: ViewS
             </motion.button>
           );
         })}
+        <button className="mobile-calendar-tab" type="button" aria-current={calendarActive ? "page" : undefined} onClick={onCalendar}>{messages.notebook.calendar}</button>
       </div>
     </nav>
   );

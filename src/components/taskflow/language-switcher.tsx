@@ -29,7 +29,7 @@ export function LanguageSwitcher({
   return (
     <div
       aria-label={messages.language.selectorLabel}
-      className={`inline-flex min-h-11 items-center rounded-md border border-white/[0.08] bg-white/[0.025] p-1 ${className}`}
+      className={`language-switcher inline-flex min-h-11 items-center rounded-md border border-white/[0.08] bg-white/[0.025] p-1 ${className}`}
       role="group"
     >
       {!compact && (
