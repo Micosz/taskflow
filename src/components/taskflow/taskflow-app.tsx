@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { RotateCcw } from "lucide-react";
 import {
@@ -596,7 +596,7 @@ export function TaskFlowApp() {
                 data-calendar-layout={view === "active" || undefined}
                 data-calendar-only={calendarOnly || undefined}
               >
-                {!calendarOnly && now && (
+                {now && <Activity mode={calendarOnly ? "hidden" : "visible"}>
                   <div className="lecture-sheet">
                     {view === "active" && <CourseShelf projects={projects} messages={messages}
                       onOpen={(project) => { activateUiScope(); setSelectedProjectId(project.id); setSection("projects"); }}
@@ -608,7 +608,7 @@ export function TaskFlowApp() {
                       onReview={(draft) => { openCreate(); setFormDraft(draft); }}
                       onSave={createAndNotify} />}
                   </div>
-                )}
+                </Activity>}
 
                 <div className="editorial-planner">
                   {view === "active" && now && (

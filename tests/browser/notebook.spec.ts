@@ -49,3 +49,26 @@ test("a conflicting weekday opens the due date for keyboard review", async ({ pa
   await page.reload();
   expect(await savedTasks(page)).toEqual([expect.objectContaining({ title: "อ่าน", dueDate: "2026-12-01" })]);
 });
+
+test("the phone calendar has its own tab and preserves an unfinished entry", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const sentence = "ส่งแลบ CS264 วันศุกร์ 2026-12-04";
+  const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+  const calendar = page.locator(".task-calendar");
+  const views = page.getByRole("navigation", { name: "มุมมองงาน" });
+  await entry.fill(sentence);
+  await expect(calendar).toBeHidden();
+  await views.getByRole("button", { name: "ปฏิทิน" }).press("Enter");
+  await expect(calendar).toBeVisible();
+  await expect(entry).toBeHidden();
+  await calendar.getByRole("button", { name: "เดือนถัดไป" }).click();
+  await calendar.getByRole("button", { name: "เดือนถัดไป" }).click();
+  await expect(calendar.locator(".task-calendar__day")).toHaveCount(42);
+  await views.getByRole("button", { name: /^ภาพรวม/ }).press("Enter");
+  await expect(entry).toHaveValue(sentence);
+  await expect(calendar).toBeHidden();
+  expect(await savedTasks(page)).toEqual([]);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(calendar).toBeVisible();
+  await expect(calendar.locator(".task-calendar__day:not([data-outside])")).toHaveCount(31);
+});

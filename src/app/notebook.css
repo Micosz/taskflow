@@ -209,6 +209,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   .mobile-view-tabs button { flex-shrink: 0; }
   .notebook-focus__title { font-size: clamp(1.55rem, 6vw, 2.35rem); }
   .editorial-planner .task-calendar { margin: 0; }
+  .editorial-workspace:not([data-calendar-only]) > .editorial-planner > .task-calendar { display: none; }
   .editorial-workspace[data-calendar-only] { display: block; }
   .task-calendar__day { min-height: 54px; }
   .task-calendar__day-note { gap: 2px; }
