@@ -76,6 +76,44 @@ test("an impossible date has to be corrected before the task can be saved", asyn
   })]);
 });
 
+for (const example of [
+  { kind: "desktop range", width: 1280, height: 800, title: "ส่งรายงาน 2026-12-01 ถึง 04/12/2026", secondDate: "04/12/2026" },
+  { kind: "phone quoted title", width: 390, height: 844, title: 'อ่าน "บันทึก 2026-12-01" 2026-12-04', secondDate: "2026-12-04" },
+]) {
+  test(`two written dates in a ${example.kind} require a choice and keep the title`, async ({ page }) => {
+    await page.setViewportSize({ width: example.width, height: example.height });
+    const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+    const sentence = example.title + " CS264 บ่ายสอง";
+    const preview = page.locator(".quick-entry__preview");
+    await entry.fill(sentence);
+    await expect(preview).toContainText("2026-12-01");
+    await expect(preview).toContainText(example.secondDate);
+    await expect(preview.getByRole("button", { name: /เลือกวัน/ })).toContainText("14:00");
+    await entry.press("Enter");
+    const dialog = page.getByRole("dialog");
+    const date = dialog.locator('input[name="dueDate"]');
+    await expect(date).toBeFocused();
+    await expect(date).toHaveValue("");
+    await expect(date).toHaveAccessibleDescription(/2026-12-01/);
+    await expect(dialog.locator('input[name="title"]')).toHaveValue(example.title);
+    await date.press("Escape");
+    await expect(entry).toBeFocused();
+    await expect(entry).toHaveValue(sentence);
+    await entry.press("Enter");
+    await date.press("Enter");
+    await expect(date).toHaveAttribute("aria-invalid", "true");
+    expect(await savedTasks(page)).toEqual([]);
+    await date.fill("04/12/2026");
+    await date.press("Enter");
+    await expect(entry).toHaveValue("");
+    await expect(entry).toBeFocused();
+    await page.reload();
+    expect(await savedTasks(page)).toEqual([expect.objectContaining({
+      title: example.title, category: "CS264", dueDate: "2026-12-04", dueTime: "14:00",
+    })]);
+  });
+}
+
 test("the phone calendar has its own tab and preserves an unfinished entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const sentence = "ส่งแลบ CS264 วันศุกร์ 2026-12-04";

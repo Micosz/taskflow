@@ -13,7 +13,10 @@ type Found = { match: { index: number; 0: string }; value: string };
 
 export interface QuickEntryDraft extends TaskFormValues {
   needsTimeReview: boolean;
-  dateConflict: { weekday: string; date: string } | null;
+  dateConflict:
+    | { message: "dateConflict"; weekday: string; date: string }
+    | { message: "multipleDates"; firstDate: string; secondDate: string }
+    | null;
 }
 
 function writtenDateKey(token: string): string | null {
@@ -21,10 +24,20 @@ function writtenDateKey(token: string): string | null {
   return isValidDateKey(token) ? token : null;
 }
 
-function readDate(text: string, today: Date) {
+function readDate(text: string, today: Date): { remaining: string; dueDate: string; dateConflict: QuickEntryDraft["dateConflict"] } {
   const dateTokens = /มะรืนนี้|มะรืน|พรุ่งนี้|วันนี้|วัน(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์)|\b(?:today|tomorrow)\b|(?<!\d)(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})(?!\d)/gi;
-  const [first, second, third] = text.matchAll(dateTokens);
+  const matches = [...text.matchAll(dateTokens)];
+  const [first, second, third] = matches;
   if (!first) return { remaining: text, dueDate: "", dateConflict: null };
+
+  // Written dates can be a range or part of a title. Keep their wording for review.
+  const [firstWritten, secondWritten] = matches.filter((match) => match[2]);
+  if (secondWritten) {
+    return {
+      remaining: text, dueDate: "",
+      dateConflict: { message: "multipleDates", firstDate: firstWritten[2], secondDate: secondWritten[2] },
+    };
+  }
 
   // A weekday can qualify a written date several weeks away.
   if (second && !third) {
@@ -36,7 +49,7 @@ function readDate(text: string, today: Date) {
       return {
         remaining: removeMatch(removeMatch(text, second), first),
         dueDate: dueDate ?? "",
-        dateConflict: agrees ? null : { weekday: "วัน" + weekday, date: written },
+        dateConflict: agrees ? null : { message: "dateConflict", weekday: "วัน" + weekday, date: written },
       };
     }
   }

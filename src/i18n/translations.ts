@@ -10,6 +10,7 @@ const english = {
     dayUnit: "d", focus: "In focus", emptyFocus: "No task in focus", quickTitle: "Quick entry",
     example: "Submit lab CS264 tomorrow 14:00", chooseCourse: "Choose course", chooseDate: "Choose date", chooseTime: "Choose time", review: "Edit task details",
     reviewDate: "Review date", dateConflict: "“{weekday}” and “{date}” don’t match. Check the due date before saving.",
+    multipleDates: "This entry includes “{firstDate}” and “{secondDate}”. Choose a due date before saving.",
     calendar: "Calendar", appearance: "Appearance", paper: "Lecture notebook", dark: "Dark",
   },
   todo: {
@@ -428,6 +429,7 @@ const thai: TranslationMessages = {
     dayUnit: "วัน", focus: "งานที่ต้องโฟกัส", emptyFocus: "ยังไม่มีงานที่ต้องโฟกัส", quickTitle: "เพิ่มงานอย่างรวดเร็ว",
     example: "ส่งแลบ CS264 พรุ่งนี้บ่ายสอง", chooseCourse: "เลือกวิชา", chooseDate: "เลือกวันส่ง", chooseTime: "เลือกเวลา", review: "แก้ไขรายละเอียดงาน",
     reviewDate: "ตรวจวันส่ง", dateConflict: "“{weekday}” กับ “{date}” ไม่ตรงกัน ตรวจวันส่งอีกครั้งก่อนบันทึก",
+    multipleDates: "พบวันที่ “{firstDate}” และ “{secondDate}” เลือกวันส่งก่อนบันทึก",
     calendar: "ปฏิทิน", appearance: "รูปแบบหน้าจอ", paper: "สมุดเลกเชอร์", dark: "ธีมเข้ม",
   },
   todo: {

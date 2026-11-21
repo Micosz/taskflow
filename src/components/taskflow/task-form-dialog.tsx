@@ -387,7 +387,7 @@ export function TaskFormDialog({
                     </div>
                     <p id="dueDate-hint" className="mt-1.5 text-xs text-[#aeb2c9]">
                       {draft?.dateConflict && dateText === formatDateInput(draft.dueDate) &&
-                        interpolate(messages.notebook.dateConflict, draft.dateConflict) + " "}
+                        interpolate(messages.notebook[draft.dateConflict.message], draft.dateConflict) + " "}
                       {messages.form.dateFormatHint}
                     </p>
                     {fieldError("dueDate")}

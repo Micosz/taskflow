@@ -66,7 +66,7 @@ export function QuickEntry({ inputRef, categories, now, locale, messages, onRevi
           <CalendarDays size={15} aria-hidden="true" />{draft.dueDate ? formatCompactDate(draft.dueDate, locale) : copy.chooseDate}{draft.dueTime && " · " + draft.dueTime}{draft.needsTimeReview && " · " + copy.chooseTime}
         </button>
         {draft.dateConflict && <p id={id + "-date-conflict"} className="basis-full text-sm">
-          {interpolate(copy.dateConflict, draft.dateConflict)}
+          {interpolate(copy[draft.dateConflict.message], draft.dateConflict)}
         </p>}
       </div>}
       {status === "error" && <p role="alert" className="quick-entry__error">{messages.toast.errorDescription}</p>}

@@ -53,6 +53,19 @@ describe("one-line notebook entries", () => {
       title: "อ่าน บทที่ 2", dueDate: "2026-12-04", dateConflict: null,
     });
   });
+  it.each([
+    ["ส่งรายงาน 2026-12-01 ถึง 04/12/2026", "2026-12-01", "04/12/2026"],
+    ['อ่าน "บันทึก 2026-12-01" 2026-12-04', "2026-12-01", "2026-12-04"],
+    ["วันนี้ วันศุกร์ 1/12/2026 หรือ 2026-12-04 หรือ 2026-12-08", "1/12/2026", "2026-12-04"],
+    ["ทบทวน 2026-12-04 และ 4/12/2026", "2026-12-04", "4/12/2026"],
+  ])("keeps both written dates in %s until a due date is chosen", (title, firstDate, secondDate) => {
+    const draft = parse(title + " CS264 บ่ายสอง");
+    expect(draft).toMatchObject({
+      title, category: courses[0], dueDate: "", dueTime: "14:00",
+      dateConflict: { firstDate, secondDate },
+    });
+    expect(validateTaskForm(draft).dueDate).toBe("dueDateRequired");
+  });
   it("keeps missing and invalid fields available to the regular form", () => {
     const draft = parse("Write report tomorrow 14:00");
     expect(draft).toMatchObject({ title: "Write report", category: "", dueTime: "14:00" });
