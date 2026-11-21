@@ -26,6 +26,10 @@ npm run lint
 npm run build
 ```
 
+For the guest-mode notebook browser checks, build without Supabase environment
+variables, then run `npx playwright install chromium` and `npm run test:browser`.
+The runner starts the local build on loopback and uses a fresh browser context for each test.
+
 Stack: Next.js App Router, React, TypeScript, Tailwind CSS, Motion, Supabase and Vitest.
 
 ## Repository map

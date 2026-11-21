@@ -1,4 +1,4 @@
-import { fromDateKey, getDayDifference, isValidDateKey, toDateKey } from "@/lib/date";
+import { addDaysToKey, fromDateKey, getDayDifference, isValidDateKey, toDateKey } from "@/lib/date";
 import type { Task } from "@/types/task";
 import { getTaskDeadline } from "./task-countdown";
 import { sortTasks } from "./task-selectors";
@@ -14,6 +14,27 @@ export function getCalendarDays(monthKey: string): string[] {
     day.setDate(1 - offset + index);
     return toDateKey(day);
   });
+}
+
+/** Move from a calendar cell in local time. Weeks run Sunday through Saturday. */
+export function getCalendarKeyTarget(day: string, key: string, shift = false): string | null {
+  switch (key) {
+    case "ArrowLeft": return addDaysToKey(day, -1);
+    case "ArrowRight": return addDaysToKey(day, 1);
+    case "ArrowUp": return addDaysToKey(day, -7);
+    case "ArrowDown": return addDaysToKey(day, 7);
+    case "Home": return addDaysToKey(day, -fromDateKey(day).getDay());
+    case "End": return addDaysToKey(day, 6 - fromDateKey(day).getDay());
+    case "PageUp":
+    case "PageDown": {
+      const date = fromDateKey(day);
+      const offset = (key === "PageUp" ? -1 : 1) * (shift ? 12 : 1);
+      const lastDay = new Date(date.getFullYear(), date.getMonth() + offset + 1, 0).getDate();
+      date.setMonth(date.getMonth() + offset, Math.min(date.getDate(), lastDay));
+      return toDateKey(date);
+    }
+    default: return null;
+  }
 }
 
 export function groupCalendarTasks(tasks: readonly Task[]): Map<string, Task[]> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { RotateCcw } from "lucide-react";
 import {
@@ -43,7 +43,7 @@ import { LocalTaskMigrationDialog } from "./local-task-migration-dialog";
 import { FocusHero } from "./focus-hero";
 import { CourseShelf } from "./course-shelf";
 import { QuickEntry } from "./quick-entry";
-import type { TaskFormValues } from "@/features/tasks/task-validation";
+import type { QuickEntryDraft } from "@/features/tasks/quick-entry";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
@@ -87,8 +87,10 @@ export function TaskFlowApp() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [defaultCategory, setDefaultCategory] = useState("");
   const [theme, setTheme] = useState<"paper" | "dark">("paper");
-  const [formDraft, setFormDraft] = useState<TaskFormValues | null>(null);
+  const [formDraft, setFormDraft] = useState<QuickEntryDraft | null>(null);
   const [quickRevision, setQuickRevision] = useState(0);
+  const quickInputRef = useRef<HTMLInputElement>(null);
+  const focusQuickEntry = useCallback(() => quickInputRef.current?.focus(), []);
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -596,7 +598,7 @@ export function TaskFlowApp() {
                 data-calendar-layout={view === "active" || undefined}
                 data-calendar-only={calendarOnly || undefined}
               >
-                {!calendarOnly && now && (
+                {now && <Activity mode={calendarOnly ? "hidden" : "visible"}>
                   <div className="lecture-sheet">
                     {view === "active" && <CourseShelf projects={projects} messages={messages}
                       onOpen={(project) => { activateUiScope(); setSelectedProjectId(project.id); setSection("projects"); }}
@@ -604,11 +606,12 @@ export function TaskFlowApp() {
                     <FocusHero task={focusTask} now={now} locale={locale} messages={messages}
                       busy={focusTask?.id === busyTaskId} onOpen={openDetail} onToggle={handleToggle} />
                     {view === "active" && <QuickEntry key={repositorySelection.scopeKey + "-" + quickRevision}
+                      inputRef={quickInputRef}
                       categories={categories} now={now} locale={locale} messages={messages}
                       onReview={(draft) => { openCreate(); setFormDraft(draft); }}
                       onSave={createAndNotify} />}
                   </div>
-                )}
+                </Activity>}
 
                 <div className="editorial-planner">
                   {view === "active" && now && (
@@ -664,6 +667,7 @@ export function TaskFlowApp() {
         task={scopeIsCurrent ? editingTask : null}
         defaultCategory={defaultCategory}
         draft={scopeIsCurrent && !editingTask ? formDraft : null}
+        focusFallback={scopeIsCurrent && formDraft ? focusQuickEntry : undefined}
         courses={courseManager.courses}
         courseStatus={courseManager.status}
         messages={messages}

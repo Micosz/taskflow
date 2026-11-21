@@ -10,6 +10,7 @@ import {
   type TaskFormValues,
 } from "@/features/tasks/task-validation";
 import { formatDateInput, parseDateInput, normalizeTimeInput } from "@/features/tasks/task-date-input";
+import type { QuickEntryDraft } from "@/features/tasks/quick-entry";
 import { toDateKey } from "@/lib/date";
 import { interpolate, type TranslationMessages } from "@/i18n";
 import {
@@ -25,7 +26,8 @@ interface TaskFormDialogProps {
   open: boolean;
   task: Task | null;
   defaultCategory?: string;
-  draft?: TaskFormValues | null;
+  draft?: QuickEntryDraft | null;
+  focusFallback?: () => void;
   courses: readonly Course[];
   courseStatus: "loading" | "ready" | "error";
   messages: TranslationMessages;
@@ -59,6 +61,7 @@ export function TaskFormDialog({
   task,
   defaultCategory = "",
   draft = null,
+  focusFallback,
   courses,
   courseStatus,
   messages,
@@ -86,7 +89,7 @@ export function TaskFormDialog({
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  useDialogA11y(open, dialogRef, onClose);
+  useDialogA11y(open, dialogRef, onClose, focusFallback);
 
   const updateField = <Key extends keyof TaskFormValues>(
     key: Key,
@@ -211,7 +214,7 @@ export function TaskFormDialog({
                     {messages.form.titleLabel}
                   </span>
                   <input
-                    data-autofocus
+                    data-autofocus={draft?.dateConflict ? undefined : true}
                     name="title"
                     value={values.title}
                     maxLength={TASK_FORM_LIMITS.title + 1}
@@ -338,6 +341,7 @@ export function TaskFormDialog({
                     <div className="relative">
                       <input
                         ref={dateTextRef}
+                        data-autofocus={draft?.dateConflict ? true : undefined}
                         id={dateInputId}
                         type="text"
                         inputMode="numeric"
@@ -381,7 +385,11 @@ export function TaskFormDialog({
                         <CalendarDays size={17} aria-hidden="true" />
                       </button>
                     </div>
-                    <p id="dueDate-hint" className="mt-1.5 text-xs text-[#aeb2c9]">{messages.form.dateFormatHint}</p>
+                    <p id="dueDate-hint" className="mt-1.5 text-xs text-[#aeb2c9]">
+                      {draft?.dateConflict && dateText === formatDateInput(draft.dueDate) &&
+                        interpolate(messages.notebook[draft.dateConflict.message], draft.dateConflict) + " "}
+                      {messages.form.dateFormatHint}
+                    </p>
                     {fieldError("dueDate")}
                   </div>
 

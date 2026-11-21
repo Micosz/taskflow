@@ -153,18 +153,19 @@ html[data-theme="dark"] { color-scheme: dark; }
 .app-canvas[data-theme="paper"] [data-event-type="holiday"] { --event-color: #236d70; }
 .app-canvas[data-theme="paper"] [data-event-type="all"] { --event-color: var(--olive); }
 .task-calendar__legend .event-type-option { min-height: 28px; padding: .18rem .45rem; font-size: .68rem; }
-.task-calendar__weekdays, .task-calendar__grid { gap: 0; }
+.task-calendar__weekdays, .task-calendar__week { gap: 0; }
+.task-calendar__week > [role="gridcell"] { display: grid; min-width: 0; }
 .task-calendar__weekdays { border: 1px solid var(--rule); border-radius: 6px 6px 0 0; background: var(--wash); color: var(--ink); padding: .5rem 0; font-size: .8rem; font-weight: 550; }
 .task-calendar__grid { border: solid var(--rule); border-width: 0 0 1px 1px; border-radius: 0 0 6px 6px; overflow: hidden; }
 .task-calendar__day, .task-calendar__day[data-outside] {
   gap: 2px; min-height: clamp(58px, 9.1vh, 90px); border: solid var(--rule); border-width: 0 1px 1px 0; border-radius: 0;
   background: var(--sheet); color: var(--ink); padding: 3px;
 }
-.task-calendar__day:nth-last-child(-n+7) { border-bottom: 0; }
+.task-calendar__week:last-child .task-calendar__day { border-bottom: 0; }
 .task-calendar__day[data-outside] { color: var(--quiet-ink); background: color-mix(in srgb, var(--rule) 12%, var(--sheet)); }
 .task-calendar__day[data-outside] .task-calendar__day-number { opacity: .72; }
 .task-calendar__day-number { width: 30px; height: 30px; font-weight: 450; font-size: 1.13rem; }
-.task-calendar__day[aria-pressed="true"] { border-color: var(--rule); background: color-mix(in srgb, var(--wash) 65%, var(--sheet)); }
+[role="gridcell"][aria-selected="true"] > .task-calendar__day { border-color: var(--rule); background: color-mix(in srgb, var(--wash) 65%, var(--sheet)); }
 .task-calendar__day[data-today] .task-calendar__day-number { border: 1.6px solid var(--olive); background: var(--wash); color: var(--ink); }
 .task-calendar .task-calendar__day:focus-visible { outline-color: var(--olive); outline-offset: -3px; }
 .task-calendar__day-note { align-items: center; background: color-mix(in srgb, var(--course-color, var(--event-color)) 22%, var(--sheet)); color: var(--ink); padding: 2px 4px; font-size: .74rem; }
@@ -209,6 +210,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   .mobile-view-tabs button { flex-shrink: 0; }
   .notebook-focus__title { font-size: clamp(1.55rem, 6vw, 2.35rem); }
   .editorial-planner .task-calendar { margin: 0; }
+  .editorial-workspace:not([data-calendar-only]) > .editorial-planner > .task-calendar { display: none; }
   .editorial-workspace[data-calendar-only] { display: block; }
   .task-calendar__day { min-height: 54px; }
   .task-calendar__day-note { gap: 2px; }

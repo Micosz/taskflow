@@ -13,6 +13,7 @@ export function useDialogA11y(
   open: boolean,
   containerRef: RefObject<HTMLElement | null>,
   onClose: () => void,
+  focusFallback?: () => void,
 ) {
   useEffect(() => {
     if (!open) return;
@@ -58,7 +59,8 @@ export function useDialogA11y(
       window.clearTimeout(focusTimer);
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
-      previousActiveElement?.focus();
+      if (previousActiveElement?.isConnected) previousActiveElement.focus();
+      else focusFallback?.();
     };
-  }, [containerRef, onClose, open]);
+  }, [containerRef, focusFallback, onClose, open]);
 }
