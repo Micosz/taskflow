@@ -73,9 +73,12 @@ function writtenDateKey(token: string): string | null {
   return isValidDateKey(token) ? token : null;
 }
 
-function readDate(text: string, source: string, today: Date): { remaining: string; dueDate: string; dateConflict: QuickEntryDraft["dateConflict"] } {
+function readDate(
+  text: string, source: string, today: Date, course?: Found["match"],
+): { remaining: string; dueDate: string; dateConflict: QuickEntryDraft["dateConflict"] } {
   const dateTokens = /มะรืนนี้|มะรืน|พรุ่งนี้|วันนี้|วัน(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์)|\b(?:today|tomorrow)\b|(?<!\d)(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})(?!\d)/gi;
-  const matches = [...source.matchAll(dateTokens)];
+  const dateSource = course ? removeMatch(source, course) : source;
+  const matches = [...dateSource.matchAll(dateTokens)];
 
   // Written dates can be a range or part of a title. Keep their wording for review.
   const [firstWritten, secondWritten] = matches.filter((match) => match[2]);
@@ -87,7 +90,15 @@ function readDate(text: string, source: string, today: Date): { remaining: strin
   }
 
   // Only unquoted tokens can supply or qualify a due date.
-  const [first, second, third] = matches.filter((match) => text.startsWith(match[0], match.index));
+  const unquoted = matches.filter((match) => text.startsWith(match[0], match.index));
+  const hasWrittenDate = unquoted.some((match) => match[2]);
+  const [first, second, third] = unquoted.filter((match) => {
+    if (!hasWrittenDate || !match[1]) return true;
+    // Only a separate weekday qualifies a written date. Check the user's original spacing.
+    const before = source[match.index - 1] ?? " ";
+    const after = source[match.index + match[0].length] ?? " ";
+    return /\s/u.test(before) && /\s/u.test(after);
+  });
   if (!first) return { remaining: text, dueDate: "", dateConflict: null };
   if (second && !third) {
     const weekday = first[1] || second[1];
@@ -182,7 +193,7 @@ export function parseQuickEntry(sentence: string, categories: readonly string[],
   let text = parts.map(({ start, end, quoted }) => quoted ? "\uFFFC".repeat(end - start) : source.slice(start, end)).join("");
   const category = readCourse(text, categories);
   if (category) text = removeMatch(text, category.match);
-  const date = readDate(text, category ? removeMatch(source, category.match) : source, now);
+  const date = readDate(text, source, now, category?.match);
   text = date.remaining;
   const time = readTime(text);
   const vague = time ? null : vagueTime.exec(text);

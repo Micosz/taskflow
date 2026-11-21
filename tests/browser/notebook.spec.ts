@@ -62,6 +62,8 @@ for (const example of [
   { name: "straight quoted title on a phone", sentence: '📚 อ่านเรื่อง"คืนวันศุกร์" CS264 4/12/2026', title: '📚 อ่านเรื่อง"คืนวันศุกร์"', day: "2026-12-04", phone: true },
   { name: "matching unquoted weekday", sentence: "วันศุกร์ 📚 อ่าน “บทวันศุกร์” CS264 2026-12-04", title: "📚 อ่าน “บทวันศุกร์”", day: "2026-12-04" },
   { name: "conflicting unquoted weekday", sentence: 'วันศุกร์ CS264 อ่าน "บทวันศุกร์" 2026-12-01', title: 'อ่าน "บทวันศุกร์"', day: "2026-12-01", review: true },
+  { name: "weekday embedded after the written date", sentence: "2026-12-04 CS264 อ่านเรื่องคืนวันศุกร์", title: "อ่านเรื่องคืนวันศุกร์", day: "2026-12-04" },
+  { name: "weekday embedded before the written date on a phone", sentence: "อ่านเรื่องคืนวันอังคาร CS264 4/12/2026", title: "อ่านเรื่องคืนวันอังคาร", day: "2026-12-04", phone: true },
 ]) {
   test(`guest save keeps the exact title for a ${example.name}`, async ({ page }) => {
     if (example.phone) await page.setViewportSize({ width: 390, height: 844 });

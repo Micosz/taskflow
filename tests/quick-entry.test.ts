@@ -54,6 +54,25 @@ describe("one-line notebook entries", () => {
     });
   });
   it.each([
+    ["2026-12-04 CS264 อ่านเรื่องคืนวันศุกร์", "อ่านเรื่องคืนวันศุกร์"],
+    ["อ่านเรื่องคืนวันอังคาร CS264 4/12/2026", "อ่านเรื่องคืนวันอังคาร"],
+    ["2026-12-04 CS264 อ่าน วันศุกร์พิเศษ", "อ่าน วันศุกร์พิเศษ"],
+    ["CS264 สรุป (วันศุกร์) 2026-12-04", "สรุป (วันศุกร์)"],
+    ["CS264วันศุกร์ อ่าน 2026-12-04", "วันศุกร์ อ่าน"],
+  ])("uses the written date and preserves the joined weekday in %s", (sentence, title) => {
+    expect(parse(sentence)).toMatchObject({ title, category: courses[0], dueDate: "2026-12-04", dateConflict: null });
+  });
+  it("still reviews a separate conflicting weekday beside a title containing the same weekday", () => {
+    expect(parse("อ่านเรื่องคืนวันศุกร์ CS264 วันศุกร์ 2026-12-01")).toMatchObject({
+      title: "อ่านเรื่องคืนวันศุกร์", dueDate: "2026-12-01", dateConflict: { weekday: "วันศุกร์", date: "2026-12-01" },
+    });
+  });
+  it("keeps weekday-only scheduling when the only numeric date is inside the title", () => {
+    expect(parse('อ่าน "ฉบับ 2026-12-04" CS264 วันศุกร์บ่ายสอง')).toMatchObject({
+      title: 'อ่าน "ฉบับ 2026-12-04"', dueDate: "2026-11-27", dueTime: "14:00", dateConflict: null,
+    });
+  });
+  it.each([
     ["2026-12-04 CS264 อ่านเรื่อง “คืนวันศุกร์”", "อ่านเรื่อง “คืนวันศุกร์”"],
     ['📚 อ่านเรื่อง"คืนวันศุกร์" CS264 4/12/2026', '📚 อ่านเรื่อง"คืนวันศุกร์"'],
     ["อ่าน ‘คืนวันจันทร์’ 2026-12-04 CS264", "อ่าน ‘คืนวันจันทร์’"],
