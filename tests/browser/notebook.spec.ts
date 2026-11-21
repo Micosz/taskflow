@@ -57,6 +57,49 @@ test("a conflicting weekday opens the due date for keyboard review", async ({ pa
   expect(await savedTasks(page)).toEqual([expect.objectContaining({ title: "อ่าน", dueDate: "2026-12-01" })]);
 });
 
+for (const example of [
+  { name: "curly quoted title", sentence: "2026-12-04 CS264 อ่านเรื่อง “คืนวันศุกร์”", title: "อ่านเรื่อง “คืนวันศุกร์”", day: "2026-12-04" },
+  { name: "straight quoted title on a phone", sentence: '📚 อ่านเรื่อง"คืนวันศุกร์" CS264 4/12/2026', title: '📚 อ่านเรื่อง"คืนวันศุกร์"', day: "2026-12-04", phone: true },
+  { name: "matching unquoted weekday", sentence: "วันศุกร์ 📚 อ่าน “บทวันศุกร์” CS264 2026-12-04", title: "📚 อ่าน “บทวันศุกร์”", day: "2026-12-04" },
+  { name: "conflicting unquoted weekday", sentence: 'วันศุกร์ CS264 อ่าน "บทวันศุกร์" 2026-12-01', title: 'อ่าน "บทวันศุกร์"', day: "2026-12-01", review: true },
+]) {
+  test(`guest save keeps the exact title for a ${example.name}`, async ({ page }) => {
+    if (example.phone) await page.setViewportSize({ width: 390, height: 844 });
+    const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+    await entry.fill(example.sentence);
+    await expect(page.locator(".quick-entry__preview")).toContainText(example.review ? "1 ธ.ค." : "4 ธ.ค.");
+    await entry.press("Enter");
+    if (example.review) {
+      const dialog = page.getByRole("dialog");
+      const date = dialog.locator('input[name="dueDate"]');
+      await expect(date).toBeFocused();
+      await expect(dialog.locator('input[name="title"]')).toHaveValue(example.title);
+      expect(await savedTasks(page)).toEqual([]);
+      await date.press("Enter");
+    }
+    await expect(entry).toHaveValue("");
+    await page.reload();
+    expect(await savedTasks(page)).toEqual([expect.objectContaining({ title: example.title, category: "CS264", dueDate: example.day })]);
+  });
+}
+
+test("an unfinished quotation opens review with the entire entry and cancels losslessly", async ({ page }) => {
+  const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+  const sentence = 'CS264 อ่าน "คืนวันศุกร์ 2026-12-04';
+  await entry.fill(sentence);
+  await entry.press("Enter");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator('input[name="title"]')).toHaveValue(sentence);
+  const date = dialog.locator('input[name="dueDate"]');
+  await expect(date).toBeFocused();
+  await expect(date).toHaveValue("");
+  await expect(date).toHaveAccessibleDescription(/เครื่องหมายคำพูด/);
+  expect(await savedTasks(page)).toEqual([]);
+  await date.press("Escape");
+  await expect(entry).toHaveValue(sentence);
+  await expect(entry).toBeFocused();
+});
+
 test("an impossible date has to be corrected before the task can be saved", async ({ page }) => {
   const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
   await entry.fill("จด CS264 วันจันทร์ 2026-02-30 บ่ายสอง");

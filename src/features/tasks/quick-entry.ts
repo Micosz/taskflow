@@ -16,7 +16,56 @@ export interface QuickEntryDraft extends TaskFormValues {
   dateConflict:
     | { message: "dateConflict"; weekday: string; date: string }
     | { message: "multipleDates"; firstDate: string; secondDate: string }
+    | { message: "unclearQuotes" }
     | null;
+}
+
+type TitlePart = { start: number; end: number; quoted: boolean };
+const closingQuote: Record<string, string> = { '"': '"', "'": "'", "“": "”", "‘": "’" };
+const wordCharacter = /[\p{L}\p{M}\p{N}]/u;
+const thaiCharacter = /\p{Script=Thai}/u;
+
+/** Return source offsets, or decline to extract fields when a quote boundary is unclear. */
+function splitTitleQuotes(source: string): TitlePart[] | null {
+  const parts: TitlePart[] = [];
+  const closers: string[] = [];
+  let start = 0;
+  function finish(end: number, quoted: boolean) {
+    if (end > start) parts.push({ start, end, quoted });
+    start = end;
+  }
+  for (const { 0: token, index } of source.matchAll(/\\[\\'"“”‘’]|['"“”‘’]/gu)) {
+    const char = token.at(-1)!;
+    if (char === "\\") continue;
+    const before = source[index - 1] ?? "";
+    const after = source[index + token.length] ?? "";
+    // Apostrophes in words such as don't are literal. Thai titles can touch both quote marks.
+    const single = char === "'" || char === "’";
+    if (single && wordCharacter.test(before) && wordCharacter.test(after) &&
+        !thaiCharacter.test(before) && !thaiCharacter.test(after)) continue;
+    if (token.length === 2) {
+      if (!closers.length) return null;
+      continue;
+    }
+    if (closers.length) {
+      if (char === closers.at(-1)) {
+        closers.pop();
+        if (!closers.length) finish(index + 1, true);
+      } else if (char === "“" || char === "‘") {
+        closers.push(closingQuote[char]);
+      }
+      continue;
+    }
+    if (char === "”" || (char === "’" && (thaiCharacter.test(before) || thaiCharacter.test(after)))) return null;
+    if (char === "’") continue;
+    if (char === "'" && wordCharacter.test(before) && !wordCharacter.test(after)) continue;
+    if (char === '"' && /\d/.test(before) && (!after || /\s/.test(after))) continue;
+    finish(index, false);
+    closers.push(closingQuote[char]);
+  }
+  if (closers.length) return null;
+  finish(source.length, false);
+  return parts;
 }
 
 function writtenDateKey(token: string): string | null {
@@ -24,11 +73,9 @@ function writtenDateKey(token: string): string | null {
   return isValidDateKey(token) ? token : null;
 }
 
-function readDate(text: string, today: Date): { remaining: string; dueDate: string; dateConflict: QuickEntryDraft["dateConflict"] } {
+function readDate(text: string, source: string, today: Date): { remaining: string; dueDate: string; dateConflict: QuickEntryDraft["dateConflict"] } {
   const dateTokens = /มะรืนนี้|มะรืน|พรุ่งนี้|วันนี้|วัน(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์)|\b(?:today|tomorrow)\b|(?<!\d)(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})(?!\d)/gi;
-  const matches = [...text.matchAll(dateTokens)];
-  const [first, second, third] = matches;
-  if (!first) return { remaining: text, dueDate: "", dateConflict: null };
+  const matches = [...source.matchAll(dateTokens)];
 
   // Written dates can be a range or part of a title. Keep their wording for review.
   const [firstWritten, secondWritten] = matches.filter((match) => match[2]);
@@ -39,7 +86,9 @@ function readDate(text: string, today: Date): { remaining: string; dueDate: stri
     };
   }
 
-  // A weekday can qualify a written date several weeks away.
+  // Only unquoted tokens can supply or qualify a due date.
+  const [first, second, third] = matches.filter((match) => text.startsWith(match[0], match.index));
+  if (!first) return { remaining: text, dueDate: "", dateConflict: null };
   if (second && !third) {
     const weekday = first[1] || second[1];
     const written = first[2] || second[2];
@@ -98,7 +147,7 @@ const vagueTime = /(?:^|\s)(?:(?:ตอน|ช่วง)\s*)?(?:เช้า|ส
 const timePrefix = /(?:ตอน|เวลา)\s*$/;
 
 function removeMatch(text: string, { index, 0: token }: Found["match"]) {
-  return text.slice(0, index) + " " + text.slice(index + token.length);
+  return text.slice(0, index) + " ".repeat(token.length) + text.slice(index + token.length);
 }
 
 function readCourse(text: string, categories: readonly string[]): Found | null {
@@ -121,22 +170,36 @@ function readCourse(text: string, categories: readonly string[]): Found | null {
 
 /** Leave missing fields empty so the normal form can complete the draft. */
 export function parseQuickEntry(sentence: string, categories: readonly string[], now: Date): QuickEntryDraft {
-  let text = sentence.trim();
+  const source = sentence.trim();
+  const parts = splitTitleQuotes(source);
+  if (!parts) {
+    return {
+      title: sentence, description: "", category: "", eventType: "task", dueDate: "", dueTime: "",
+      needsTimeReview: false, dateConflict: { message: "unclearQuotes" },
+    };
+  }
+  // Keep UTF-16 offsets aligned with the source. A quote also separates adjacent words and times.
+  let text = parts.map(({ start, end, quoted }) => quoted ? "\uFFFC".repeat(end - start) : source.slice(start, end)).join("");
   const category = readCourse(text, categories);
   if (category) text = removeMatch(text, category.match);
-  const date = readDate(text, now);
+  const date = readDate(text, category ? removeMatch(source, category.match) : source, now);
   text = date.remaining;
   const time = readTime(text);
   const vague = time ? null : vagueTime.exec(text);
   if (time) {
-    text = text.slice(0, time.match.index).replace(timePrefix, "") + " " + text.slice(time.match.index + time.match[0].length);
+    const prefix = timePrefix.exec(text.slice(0, time.match.index));
+    text = removeMatch(text, time.match);
+    if (prefix) text = removeMatch(text, prefix);
   } else if (vague) {
-    text = text.slice(0, vague.index);
+    text = removeMatch(text, vague);
   }
+  const title = parts.map(({ start, end, quoted }) =>
+    quoted ? source.slice(start, end) : text.slice(start, end).replace(/\s+/g, " "),
+  ).join("").trim();
   return {
     dateConflict: date.dateConflict,
     needsTimeReview: Boolean(vague),
-    title: text.replace(/\s+/g, " ").trim(), description: "", category: category?.value ?? "",
+    title, description: "", category: category?.value ?? "",
     eventType: "task", dueDate: date.dueDate, dueTime: time?.value ?? "",
   };
 }

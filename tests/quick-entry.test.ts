@@ -54,6 +54,58 @@ describe("one-line notebook entries", () => {
     });
   });
   it.each([
+    ["2026-12-04 CS264 อ่านเรื่อง “คืนวันศุกร์”", "อ่านเรื่อง “คืนวันศุกร์”"],
+    ['📚 อ่านเรื่อง"คืนวันศุกร์" CS264 4/12/2026', '📚 อ่านเรื่อง"คืนวันศุกร์"'],
+    ["อ่าน ‘คืนวันจันทร์’ 2026-12-04 CS264", "อ่าน ‘คืนวันจันทร์’"],
+    ["2026-12-04 CS264 อ่าน 'คืนวันจันทร์'", "อ่าน 'คืนวันจันทร์'"],
+    ["CS264 อ่าน“ส่วน ‘วันพุธ’ และวันศุกร์” 2026-12-04", "อ่าน“ส่วน ‘วันพุธ’ และวันศุกร์”"],
+  ])("preserves the quoted weekday in %s", (sentence, title) => {
+    expect(parse(sentence)).toMatchObject({ title, category: courses[0], dueDate: "2026-12-04", dateConflict: null });
+  });
+  it("preserves quoted whitespace, course and time while extracting their unquoted occurrences", () => {
+    const title = "📚 อ่าน “CS900  วันศุกร์  08:30”";
+    expect(parse(title + " จาก CS264 วันศุกร์ 2026-12-04 เวลา 14:00")).toMatchObject({
+      title: title + " จาก", category: courses[0], dueDate: "2026-12-04", dueTime: "14:00", dateConflict: null,
+    });
+  });
+  it("maps extractions before, between and after separate quoted title spans", () => {
+    const left = "📚 อ่าน“คืน  วันศุกร์”";
+    const right = '"CS900  08:30" ท้าย';
+    const fields = "CS264 วันศุกร์ 4/12/2026 14:00";
+    for (const sentence of [[fields, left, right], [left, fields, right], [left, right, fields]]) {
+      expect(parse(sentence.join(" "))).toMatchObject({
+        title: left + " " + right, category: courses[0], dueDate: "2026-12-04", dueTime: "14:00", dateConflict: null,
+      });
+    }
+  });
+  it("reviews conflicting unquoted fields and preserves the identical weekday inside the title", () => {
+    const title = 'อ่าน "คืนวันศุกร์"';
+    expect(parse("วันศุกร์ CS264 " + title + " 2026-12-01")).toMatchObject({
+      title, dueDate: "2026-12-01", dateConflict: { weekday: "วันศุกร์", date: "2026-12-01" },
+    });
+  });
+  it("leaves a date entirely inside the title for manual scheduling", () => {
+    const title = "อ่าน “พรุ่งนี้ 2026-12-04”";
+    expect(parse(title + " CS264")).toMatchObject({ title, category: courses[0], dueDate: "" });
+  });
+  it("keeps escaped inner quotes and treats an even pair of backslashes as literal", () => {
+    const title = 'อ่าน "คำว่า \\"คืนวันศุกร์\\" และ \\\\"';
+    expect(parse(title + " CS264 2026-12-04")).toMatchObject({ title, dueDate: "2026-12-04", dateConflict: null });
+  });
+  it.each(["don't lose Friday's notes", "students’ notes", "James' notes", 'compare the 6" screen', "O’Neil's plan"])(
+    "leaves ordinary punctuation in %s and still reads tomorrow", (title) => {
+      expect(parse(title + " CS264 tomorrow")).toMatchObject({ title, category: courses[0], dueDate: "2026-11-22", dateConflict: null });
+    },
+  );
+  it.each([
+    '  CS264 อ่าน "คืนวันศุกร์ 2026-12-04 ', "CS264 อ่าน คืนวันศุกร์” 2026-12-04",
+    "CS264 อ่าน ’คืนวันศุกร์’ 2026-12-04", 'CS264 อ่าน \\"คืนวันศุกร์\\" 2026-12-04',
+  ])(
+    "sends unclear quotes to review with the original entry intact", (sentence) => {
+      expect(parse(sentence)).toMatchObject({ title: sentence, dueDate: "", dateConflict: { message: "unclearQuotes" } });
+    },
+  );
+  it.each([
     ["ส่งรายงาน 2026-12-01 ถึง 04/12/2026", "2026-12-01", "04/12/2026"],
     ['อ่าน "บันทึก 2026-12-01" 2026-12-04', "2026-12-01", "2026-12-04"],
     ["วันนี้ วันศุกร์ 1/12/2026 หรือ 2026-12-04 หรือ 2026-12-08", "1/12/2026", "2026-12-04"],

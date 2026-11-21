@@ -11,6 +11,7 @@ const english = {
     example: "Submit lab CS264 tomorrow 14:00", chooseCourse: "Choose course", chooseDate: "Choose date", chooseTime: "Choose time", review: "Edit task details",
     reviewDate: "Review date", dateConflict: "“{weekday}” and “{date}” don’t match. Check the due date before saving.",
     multipleDates: "This entry includes “{firstDate}” and “{secondDate}”. Choose a due date before saving.",
+    unclearQuotes: "Check the quotation marks, or choose a due date and edit the title in the form.",
     calendar: "Calendar", appearance: "Appearance", paper: "Lecture notebook", dark: "Dark",
   },
   todo: {
@@ -430,6 +431,7 @@ const thai: TranslationMessages = {
     example: "ส่งแลบ CS264 พรุ่งนี้บ่ายสอง", chooseCourse: "เลือกวิชา", chooseDate: "เลือกวันส่ง", chooseTime: "เลือกเวลา", review: "แก้ไขรายละเอียดงาน",
     reviewDate: "ตรวจวันส่ง", dateConflict: "“{weekday}” กับ “{date}” ไม่ตรงกัน ตรวจวันส่งอีกครั้งก่อนบันทึก",
     multipleDates: "พบวันที่ “{firstDate}” และ “{secondDate}” เลือกวันส่งก่อนบันทึก",
+    unclearQuotes: "ตรวจเครื่องหมายคำพูด หรือเลือกวันส่งและแก้ชื่อในแบบฟอร์ม",
     calendar: "ปฏิทิน", appearance: "รูปแบบหน้าจอ", paper: "สมุดเลกเชอร์", dark: "ธีมเข้ม",
   },
   todo: {
