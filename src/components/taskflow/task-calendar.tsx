@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatDate, formatNumber, formatTaskCount, interpolate, type Locale, type TranslationMessages } from "@/i18n";
+import { formatDate, formatNumber, formatTaskCount, interpolate, localeMetadata, type Locale, type TranslationMessages } from "@/i18n";
 import { fromDateKey, toDateKey, formatClockTime } from "@/lib/date";
 import { getCalendarDays, getCalendarTaskTiming, groupCalendarTasks } from "@/features/tasks/task-calendar";
+import { courseInk } from "@/features/courses/course-stationery";
 import { TASK_EVENT_TYPES, normalizeTaskEventType, type TaskEventType, type Task } from "@/types/task";
 
 interface TaskCalendarProps {
-  tasks: Task[];
+  tasks: readonly Task[];
   now: Date;
   locale: Locale;
   messages: TranslationMessages;
@@ -27,7 +28,15 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
   const grouped = useMemo(() => groupCalendarTasks(filteredTasks), [filteredTasks]);
   const selectedTasks = grouped.get(selectedDay) ?? [];
   const copy = messages.calendar;
-  const monthLabel = formatDate(`${monthKey}-01`, locale, { month: "long", year: "numeric" });
+  const monthParts = useMemo(() => new Intl.DateTimeFormat(localeMetadata[locale].languageTag, {
+    month: "long", year: "numeric",
+  }).formatToParts(fromDateKey(`${monthKey}-01`)), [locale, monthKey]);
+  const monthLabel = monthParts.map((part) => part.value).join("");
+  const weekdayLabels = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const weekday = new Date(2026, 0, 4 + index); // January 4 is a Sunday.
+    return locale === "th" ? formatDate(weekday, locale, { weekday: "narrow" }) + "."
+      : formatDate(weekday, locale, { weekday: "short" });
+  }), [locale]);
 
   function moveMonth(offset: number) {
     const date = fromDateKey(`${monthKey}-01`);
@@ -48,11 +57,17 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
   return (
     <section className="task-calendar" aria-labelledby="calendar-heading">
       <div className="task-calendar__heading">
-        <div>
-          <h2 id="calendar-heading"><CalendarDays size={18} aria-hidden="true" />{copy.title}</h2>
-          <p>{copy.subtitle}</p>
+        <h2 id="calendar-heading">
+          <CalendarDays aria-hidden="true" />
+          <span className="sr-only">{copy.title} · </span>
+          <span aria-live="polite">{monthParts.map((part) => part.type === "year"
+            ? <em key={part.type}>{part.value}</em> : part.value)}</span>
+        </h2>
+        <div className="task-calendar__navigation">
+          <button type="button" className="task-calendar__today" onClick={() => { setMonth(null); setSelection(null); }}>{messages.date.today}</button>
+          <button type="button" aria-label={copy.previousMonth} onClick={() => moveMonth(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+          <button type="button" aria-label={copy.nextMonth} onClick={() => moveMonth(1)}><ChevronRight size={18} aria-hidden="true" /></button>
         </div>
-        <button type="button" className="task-calendar__today" onClick={() => { setMonth(null); setSelection(null); }}>{messages.date.today}</button>
       </div>
 
       <div className="task-calendar__legend" role="group" aria-label={messages.eventTypes.filter}>
@@ -64,15 +79,8 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
         ))}
       </div>
 
-      <div className="task-calendar__navigation">
-        <h3 aria-live="polite">{monthLabel}</h3>
-        <div className="flex gap-1">
-          <button type="button" aria-label={copy.previousMonth} onClick={() => moveMonth(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
-          <button type="button" aria-label={copy.nextMonth} onClick={() => moveMonth(1)}><ChevronRight size={18} aria-hidden="true" /></button>
-        </div>
-      </div>
       <div className="task-calendar__weekdays" aria-hidden="true">
-        {Array.from({ length: 7 }, (_, index) => <span key={index}>{formatDate(new Date(2026, 0, 4 + index), locale, { weekday: "short" })}</span>)}
+        {weekdayLabels.map((label) => <span key={label}>{label}</span>)}
       </div>
       <div className="task-calendar__grid" role="group" aria-label={monthLabel}>
         {days.map((day) => {
@@ -92,7 +100,7 @@ export function TaskCalendar({ tasks, now, locale, messages, onOpen }: TaskCalen
             >
               <span className="task-calendar__day-number">{formatNumber(Number(day.slice(-2)), locale)}</span>
               {events.slice(0, 3).map((task) => (
-                <span key={task.id} className="task-calendar__day-note" data-event-type={normalizeTaskEventType(task.eventType)} data-completed={task.completed || undefined} title={`${messages.eventTypes[normalizeTaskEventType(task.eventType)]}: ${task.title}`}>
+                <span key={task.id} className="task-calendar__day-note" data-course-ink={courseInk(task.category)} data-event-type={normalizeTaskEventType(task.eventType)} data-completed={task.completed || undefined} title={`${task.category} · ${messages.eventTypes[normalizeTaskEventType(task.eventType)]}: ${task.title}`}>
                   <span className="event-type-dot" aria-hidden="true" /><span>{task.title}</span>
                 </span>
               ))}

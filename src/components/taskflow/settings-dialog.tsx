@@ -21,6 +21,8 @@ interface SettingsDialogProps {
   locale: Locale;
   messages: TranslationMessages;
   onLocaleChange: (locale: Locale) => void;
+  theme: "paper" | "dark";
+  onThemeChange: (theme: "paper" | "dark") => void;
   onClose: () => void;
   authConfigured: boolean;
   accountDetail: string;
@@ -39,6 +41,8 @@ export function SettingsDialog({
   locale,
   messages,
   onLocaleChange,
+  theme,
+  onThemeChange,
   onClose,
   authConfigured,
   accountDetail,
@@ -111,6 +115,10 @@ export function SettingsDialog({
             </div>
 
             <div className="mt-6 space-y-3.5">
+              <fieldset className="theme-picker">
+                <legend>{messages.notebook.appearance}</legend>
+                {(["paper", "dark"] as const).map((option) => <button key={option} type="button" aria-pressed={theme === option} onClick={() => onThemeChange(option)}>{messages.notebook[option]}</button>)}
+              </fieldset>
               <section className="rounded-2xl border border-white/[0.075] bg-black/10 p-4 sm:p-5">
                 <div className="flex gap-3">
                   <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-cyan-200">

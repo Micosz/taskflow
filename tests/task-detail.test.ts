@@ -105,7 +105,7 @@ describe("task detail experience", () => {
     expect((html.match(/<button/g) ?? [])).toHaveLength(3);
   });
 
-  it("offers the full-detail popup from the focus panel when notes are long", () => {
+  it("keeps focus notes compact and opens the full description from the title", () => {
     const html = renderToStaticMarkup(
       createElement(FocusHero, {
         task: task({ description: "Detailed context. ".repeat(16) }),
@@ -118,7 +118,8 @@ describe("task detail experience", () => {
       }),
     );
 
-    expect(html).toContain("View full details");
+    expect(html).not.toContain("Detailed context.");
+    expect(html).not.toContain("View full details");
     expect(html).toContain("Open task details for");
   });
 });

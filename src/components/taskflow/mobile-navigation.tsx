@@ -25,6 +25,7 @@ export interface MobileNavigationProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  calendarActive: boolean;
   projectActive: boolean;
   onProjects: () => void;
   todoActive: boolean;
@@ -39,6 +40,7 @@ export function MobileNavigation({
   messages,
   locale,
   activeView,
+  calendarActive,
   projectActive,
   onProjects,
   todoActive,
@@ -51,7 +53,7 @@ export function MobileNavigation({
   const shouldReduceMotion = useReducedMotion();
 
   const renderItem = ({ view, label, icon: Icon }: MobileNavigationItem) => {
-    const selected = !todoActive && !projectActive && activeView === view;
+    const selected = !todoActive && !projectActive && !calendarActive && activeView === view;
 
     return (
       <motion.button
@@ -92,7 +94,7 @@ export function MobileNavigation({
   return (
     <nav
       aria-label={messages.accessibility.mobileNavigation}
-      className={`fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.09] bg-[#090b0a]/94 px-[max(0.5rem,env(safe-area-inset-left))] pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_55px_rgba(0,0,0,0.5)] backdrop-blur-2xl lg:hidden ${className}`}
+      className={`mobile-navigation fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.09] bg-[#090b0a]/94 px-[max(0.5rem,env(safe-area-inset-left))] pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-18px_55px_rgba(0,0,0,0.5)] backdrop-blur-2xl lg:hidden ${className}`}
     >
       <div className="mx-auto grid max-w-xl grid-cols-5 items-end gap-0.5">
         {leadingItems.map(renderItem)}

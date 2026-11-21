@@ -23,6 +23,8 @@ export interface SidebarProps {
   messages: TranslationMessages;
   locale: Locale;
   activeView: TaskView;
+  calendarActive: boolean;
+  onCalendar: () => void;
   projectActive: boolean;
   onProjects: () => void;
   todoActive: boolean;
@@ -45,6 +47,8 @@ export function Sidebar({
   messages,
   locale,
   activeView,
+  calendarActive,
+  onCalendar,
   projectActive,
   onProjects,
   todoActive,
@@ -63,23 +67,25 @@ export function Sidebar({
   className = "",
 }: SidebarProps) {
   const reduceMotion = useReducedMotion();
+  const taskSection = !todoActive && !projectActive && !calendarActive;
 
   return (
     <aside className={`editorial-topbar ${className}`}>
       <button
         type="button"
-        className="text-left outline-none focus-visible:ring-2 focus-visible:ring-[#a7b49c]"
+        className="notebook-brand-button text-left outline-none focus-visible:ring-2 focus-visible:ring-[#a7b49c]"
         onClick={() => onViewChange("active")}
         aria-label={messages.navigation.active}
       >
-        <Brand messages={messages} />
+        <Brand messages={messages} compact />
       </button>
 
       <nav aria-label={messages.accessibility.desktopNavigation} className="editorial-topbar__nav">
-        <button type="button" className="editorial-nav-link" data-active={!todoActive && !projectActive && activeView === "active" || undefined} aria-current={!todoActive && !projectActive && activeView === "active" ? "page" : undefined} onClick={() => onViewChange("active")}>{messages.navigation.active}</button>
+        <button type="button" className="editorial-nav-link" data-active={taskSection && activeView === "active" || undefined} aria-current={taskSection && activeView === "active" ? "page" : undefined} onClick={() => onViewChange("active")}>{messages.navigation.active}</button>
+        <button type="button" className="editorial-nav-link" data-active={calendarActive || undefined} aria-current={calendarActive ? "page" : undefined} onClick={onCalendar}>{messages.notebook.calendar}</button>
         <button type="button" className="editorial-nav-link" data-active={projectActive || undefined} aria-current={projectActive ? "page" : undefined} onClick={onProjects}>{locale === "th" ? "โปรเจกต์" : "Projects"}</button>
         {navigationItems.map(({ view, label }) => {
-          const selected = !todoActive && !projectActive && view === activeView;
+          const selected = taskSection && view === activeView;
           const isAlert = view === "overdue" && counts.overdue > 0;
 
           return (
@@ -103,7 +109,7 @@ export function Sidebar({
         <button type="button" className="editorial-nav-link" data-active={todoActive || undefined} aria-current={todoActive ? "page" : undefined} onClick={onTodo}>{messages.todo.title}</button>
       </nav>
 
-      <label className="editorial-search editorial-topbar__search" hidden={todoActive || projectActive}>
+      <label className="editorial-search editorial-topbar__search" hidden={projectActive || todoActive}>
         <span className="sr-only">{messages.header.searchLabel}</span>
         <Search aria-hidden="true" size={18} strokeWidth={1.45} />
         <input

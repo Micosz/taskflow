@@ -25,6 +25,7 @@ import {
 import { useAuthSession } from "@/features/auth/use-auth-session";
 import { useCourseManager } from "@/features/courses/use-course-manager";
 import {
+  filterTasksByQuery,
   getTaskViewCounts,
   selectPreviewTask,
   selectTaskById,
@@ -40,6 +41,9 @@ import { LoadingSkeleton } from "./loading-skeleton";
 import { MobileNavigation } from "./mobile-navigation";
 import { LocalTaskMigrationDialog } from "./local-task-migration-dialog";
 import { FocusHero } from "./focus-hero";
+import { CourseShelf } from "./course-shelf";
+import { QuickEntry } from "./quick-entry";
+import type { TaskFormValues } from "@/features/tasks/task-validation";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
@@ -79,9 +83,12 @@ export function TaskFlowApp() {
   const [uiScopeKey, setUiScopeKey] = useState(repositorySelection.scopeKey);
   const [selectedView, setSelectedView] = useState<TaskView>(DEFAULT_TASK_VIEW);
   const [selectedSearchQuery, setSelectedSearchQuery] = useState("");
-  const [section, setSection] = useState<"tasks" | "todo" | "projects">("tasks");
+  const [section, setSection] = useState<"tasks" | "todo" | "projects" | "calendar">("tasks");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [defaultCategory, setDefaultCategory] = useState("");
+  const [theme, setTheme] = useState<"paper" | "dark">("paper");
+  const [formDraft, setFormDraft] = useState<TaskFormValues | null>(null);
+  const [quickRevision, setQuickRevision] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -146,6 +153,7 @@ export function TaskFlowApp() {
     applyDocumentLocale(storedLocale);
     const frame = window.requestAnimationFrame(() => {
       setLocale(storedLocale);
+      try { if (window.localStorage.getItem("taskflow.theme") === "dark") setTheme("dark"); } catch { /* Storage is optional. */ }
       setNow(new Date());
     });
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -161,6 +169,23 @@ export function TaskFlowApp() {
     applyDocumentLocale(nextLocale);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "paper" ? "#faf7f0" : "#090b0a");
+  }, [theme]);
+
+  function changeTheme(next: "paper" | "dark") {
+    setTheme(next);
+    try { window.localStorage.setItem("taskflow.theme", next); } catch { /* Apply for this session. */ }
+  }
+
+  const projects = useMemo(() => getProjects(courseManager.courses, taskManager.tasks), [courseManager.courses, taskManager.tasks]);
+  const categories = useMemo(() => projects.map((project) => project.name), [projects]);
+  const calendarTasks = useMemo(
+    () => filterTasksByQuery(taskManager.tasks, searchQuery),
+    [taskManager.tasks, searchQuery],
+  );
+  const calendarOnly = section === "calendar";
   const referenceDate = useMemo(() => now ?? new Date(0), [now]);
   const counts = useMemo(
     () => getTaskViewCounts(taskManager.tasks, referenceDate),
@@ -204,20 +229,21 @@ export function TaskFlowApp() {
     activateUiScope();
     setEditingTask(null);
     setDefaultCategory("");
+    setFormDraft(null);
     setFormRevision((revision) => revision + 1);
     setFormOpen(true);
   }, [activateUiScope]);
 
   const openProjectCreate = (category?: string) => {
     openCreate();
-    const project = getProjects(courseManager.courses, taskManager.tasks).find((item) => item.id === selectedProjectId)
-      ?? getProjects(courseManager.courses, taskManager.tasks)[0];
+    const project = projects.find((item) => item.id === selectedProjectId) ?? projects[0];
     setDefaultCategory(category ?? project?.name ?? "");
   };
 
   const openEdit = useCallback((task: Task) => {
     activateUiScope();
     setEditingTask(task);
+    setFormDraft(null);
     setFormRevision((revision) => revision + 1);
     setFormOpen(true);
   }, [activateUiScope]);
@@ -232,7 +258,7 @@ export function TaskFlowApp() {
     setPreviewTaskId(task.id);
     if (window.matchMedia("(max-width: 1023px)").matches) {
       window.requestAnimationFrame(() => {
-        document.querySelector(".editorial-focus")?.scrollIntoView({
+        document.querySelector(".notebook-focus")?.scrollIntoView({
           behavior: reduceMotion ? "auto" : "smooth",
           block: "start",
         });
@@ -295,6 +321,11 @@ export function TaskFlowApp() {
     setCourseManagerReturnToForm(false);
   }, [courseManagerReturnToForm]);
 
+  const createAndNotify = async (input: CreateTaskInput) => {
+    await taskManager.createTask(input);
+    showToast(messages.toast.created, messages.toast.createdDescription);
+  };
+
   const handleSave = async (input: CreateTaskInput) => {
     try {
       if (editingTask) {
@@ -304,8 +335,8 @@ export function TaskFlowApp() {
         }
         showToast(messages.toast.updated, messages.toast.updatedDescription);
       } else {
-        await taskManager.createTask(input);
-        showToast(messages.toast.created, messages.toast.createdDescription);
+        await createAndNotify(input);
+        if (formDraft) setQuickRevision((revision) => revision + 1);
       }
       setFormOpen(false);
       setEditingTask(null);
@@ -424,6 +455,13 @@ export function TaskFlowApp() {
     });
   }, [activateUiScope, reduceMotion]);
 
+  const openCalendar = () => {
+    activateUiScope();
+    setSelectedView("active");
+    setSection("calendar");
+    document.getElementById("main-content")?.scrollIntoView({ block: "start" });
+  };
+
   const handleSearchChange = useCallback((query: string) => {
     activateUiScope();
     setSelectedSearchQuery(query);
@@ -452,7 +490,7 @@ export function TaskFlowApp() {
     migrationOffer.userId === auth.user?.id;
 
   return (
-    <div className="app-canvas">
+    <div className="app-canvas" data-theme={theme}>
       <a
         href="#main-content"
         className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#111329] transition focus:translate-y-0"
@@ -464,6 +502,8 @@ export function TaskFlowApp() {
           messages={messages}
           locale={locale}
           activeView={view}
+          calendarActive={calendarOnly}
+          onCalendar={openCalendar}
           projectActive={section === "projects"}
           onProjects={() => { activateUiScope(); setSection("projects"); }}
           todoActive={section === "todo"}
@@ -505,6 +545,7 @@ export function TaskFlowApp() {
               locale={locale}
               view={view}
               now={now}
+              compact={view === "active"}
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
               onLocaleChange={handleLocaleChange}
@@ -521,6 +562,8 @@ export function TaskFlowApp() {
               locale={locale}
               messages={messages}
               onChange={handleViewChange}
+              calendarActive={calendarOnly}
+              onCalendar={openCalendar}
             />
           </div>
 
@@ -551,31 +594,34 @@ export function TaskFlowApp() {
                 transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 className="editorial-workspace mt-6 lg:mt-0"
                 data-calendar-layout={view === "active" || undefined}
+                data-calendar-only={calendarOnly || undefined}
               >
-                {now && (
-                  <FocusHero
-                    task={focusTask}
-                    now={now}
-                    locale={locale}
-                    messages={messages}
-                    busy={focusTask?.id === busyTaskId}
-                    onOpen={openDetail}
-                    onToggle={handleToggle}
-                  />
+                {!calendarOnly && now && (
+                  <div className="lecture-sheet">
+                    {view === "active" && <CourseShelf projects={projects} messages={messages}
+                      onOpen={(project) => { activateUiScope(); setSelectedProjectId(project.id); setSection("projects"); }}
+                      onManage={() => { activateUiScope(); setCourseManagerReturnToForm(false); setCourseManagerOpen(true); }} />}
+                    <FocusHero task={focusTask} now={now} locale={locale} messages={messages}
+                      busy={focusTask?.id === busyTaskId} onOpen={openDetail} onToggle={handleToggle} />
+                    {view === "active" && <QuickEntry key={repositorySelection.scopeKey + "-" + quickRevision}
+                      categories={categories} now={now} locale={locale} messages={messages}
+                      onReview={(draft) => { openCreate(); setFormDraft(draft); }}
+                      onSave={createAndNotify} />}
+                  </div>
                 )}
 
                 <div className="editorial-planner">
                   {view === "active" && now && (
                     <TaskCalendar
                       key={repositorySelection.scopeKey}
-                      tasks={taskManager.tasks}
+                      tasks={calendarTasks}
                       now={now}
                       locale={locale}
                       messages={messages}
                       onOpen={openDetail}
                     />
                   )}
-                  <TaskList
+                  {!calendarOnly && <TaskList
                     tasks={visibleTasks}
                     view={view}
                     searchQuery={searchQuery}
@@ -589,7 +635,7 @@ export function TaskFlowApp() {
                     onDelete={openDelete}
                     onAdd={openCreate}
                     onClearSearch={() => handleSearchChange("")}
-                  />
+                  />}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -602,9 +648,10 @@ export function TaskFlowApp() {
         messages={messages}
         locale={locale}
         activeView={view}
+        calendarActive={calendarOnly}
         projectActive={section === "projects"}
-          onProjects={() => { activateUiScope(); setSection("projects"); }}
-          todoActive={section === "todo"}
+        onProjects={() => { activateUiScope(); setSection("projects"); }}
+        todoActive={section === "todo"}
         onTodo={() => setSection("todo")}
         counts={counts}
         onViewChange={handleViewChange}
@@ -616,6 +663,7 @@ export function TaskFlowApp() {
         open={scopeIsCurrent && formOpen}
         task={scopeIsCurrent ? editingTask : null}
         defaultCategory={defaultCategory}
+        draft={scopeIsCurrent && !editingTask ? formDraft : null}
         courses={courseManager.courses}
         courseStatus={courseManager.status}
         messages={messages}
@@ -641,6 +689,8 @@ export function TaskFlowApp() {
       />
       <SettingsDialog
         open={settingsOpen}
+        theme={theme}
+        onThemeChange={changeTheme}
         locale={locale}
         messages={messages}
         onLocaleChange={handleLocaleChange}

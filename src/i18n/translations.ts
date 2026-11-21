@@ -5,6 +5,12 @@ type StringShape<T> = {
 };
 
 const english = {
+  notebook: {
+    courses: "My courses", addCourse: "Add course", nextCourses: "More course folders", previousCourses: "Previous course folders",
+    dayUnit: "d", focus: "In focus", emptyFocus: "No task in focus", quickTitle: "Quick entry",
+    example: "Submit lab CS264 tomorrow 14:00", chooseCourse: "Choose course", chooseDate: "Choose date", chooseTime: "Choose time", review: "Edit task details",
+    calendar: "Calendar", appearance: "Appearance", paper: "Lecture notebook", dark: "Dark",
+  },
   todo: {
     "title": "Todo",
     "subtitle": "A place for small reminders. No dates, no deadlines.",
@@ -44,7 +50,7 @@ const english = {
     nextMonth: "Next month",
     oneDayLeft: "1 day left",
     daysLeft: "{count} days left",
-    emptyDay: "No events on this day. Select a marked date to see its notes.",
+    emptyDay: "No events on this day.",
   },
   app: {
     name: "TaskFlow",
@@ -415,6 +421,12 @@ const english = {
 export type TranslationMessages = StringShape<typeof english>;
 
 const thai: TranslationMessages = {
+  notebook: {
+    courses: "รายวิชาของฉัน", addCourse: "เพิ่มวิชา", nextCourses: "เลื่อนดูแฟ้มถัดไป", previousCourses: "เลื่อนดูแฟ้มก่อนหน้า",
+    dayUnit: "วัน", focus: "งานที่ต้องโฟกัส", emptyFocus: "ยังไม่มีงานที่ต้องโฟกัส", quickTitle: "เพิ่มงานอย่างรวดเร็ว",
+    example: "ส่งแลบ CS264 พรุ่งนี้บ่ายสอง", chooseCourse: "เลือกวิชา", chooseDate: "เลือกวันส่ง", chooseTime: "เลือกเวลา", review: "แก้ไขรายละเอียดงาน",
+    calendar: "ปฏิทิน", appearance: "รูปแบบหน้าจอ", paper: "สมุดเลกเชอร์", dark: "ธีมเข้ม",
+  },
   todo: {
     "title": "Todo",
     "subtitle": "จดสิ่งที่ต้องทำไว้เตือนตัวเอง ไม่ต้องมีวันหรือกำหนดส่ง",
@@ -454,7 +466,7 @@ const thai: TranslationMessages = {
     nextMonth: "เดือนถัดไป",
     oneDayLeft: "เหลืออีก 1 วัน",
     daysLeft: "เหลืออีก {count} วัน",
-    emptyDay: "วันนี้ไม่มี Event เลือกวันที่มีรายการเพื่อดูโน้ตได้เลย",
+    emptyDay: "ไม่มีรายการในวันนี้",
   },
   app: {
     name: "TaskFlow",

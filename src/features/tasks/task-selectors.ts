@@ -46,6 +46,14 @@ export function sortTasks(tasks: readonly Task[]): Task[] {
   });
 }
 
+export function filterTasksByQuery(tasks: readonly Task[], searchQuery: string): readonly Task[] {
+  const query = searchQuery.trim().toLocaleLowerCase();
+  if (!query) return tasks;
+  return tasks.filter((task) => [task.title, task.description, task.category].some(
+    (value) => value.toLocaleLowerCase().includes(query),
+  ));
+}
+
 export function selectTasks(
   tasks: readonly Task[],
   view: TaskView,
@@ -53,18 +61,8 @@ export function selectTasks(
   now = new Date(),
 ): Task[] {
   const todayKey = toDateKey(now);
-  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
-
-  return sortTasks(
-    tasks.filter((task) => {
-      if (!isTaskInView(task, view, todayKey)) return false;
-      if (!normalizedQuery) return true;
-
-      return [task.title, task.description, task.category].some((value) =>
-        value.toLocaleLowerCase().includes(normalizedQuery),
-      );
-    }),
-  );
+  const matchedTasks = filterTasksByQuery(tasks, searchQuery);
+  return sortTasks(matchedTasks.filter((task) => isTaskInView(task, view, todayKey)));
 }
 
 export function getTaskViewCounts(

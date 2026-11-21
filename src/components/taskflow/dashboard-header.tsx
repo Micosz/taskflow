@@ -15,6 +15,7 @@ interface DashboardHeaderProps {
   locale: Locale;
   view: TaskView;
   now: Date;
+  compact: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onLocaleChange: (locale: Locale) => void;
@@ -37,6 +38,7 @@ export function DashboardHeader({
   locale,
   view,
   now,
+  compact,
   searchQuery,
   onSearchChange,
   onLocaleChange,
@@ -49,7 +51,7 @@ export function DashboardHeader({
   return (
     <header className="editorial-dashboard-header">
       <div className="safe-top flex items-center justify-between gap-3 lg:hidden">
-        <Brand messages={messages} />
+        <Brand messages={messages} compact />
         <div className="flex items-center gap-2">
           <LanguageSwitcher compact messages={messages} locale={locale} onLocaleChange={onLocaleChange} />
           <button
@@ -63,7 +65,7 @@ export function DashboardHeader({
         </div>
       </div>
 
-      <motion.div
+      {!compact && <motion.div
         key={`${locale}-${view}`}
         className="mt-9 lg:hidden"
         initial={reduceMotion ? false : { opacity: 0, y: 7 }}
@@ -78,7 +80,7 @@ export function DashboardHeader({
           {messages.header[heading.subtitle]}
         </p>
         <p className="mt-4 text-xs text-[#6f746e]">{formatLongDate(now, locale)}</p>
-      </motion.div>
+      </motion.div>}
 
       <div className="editorial-search-row lg:hidden">
         <label className="editorial-search">

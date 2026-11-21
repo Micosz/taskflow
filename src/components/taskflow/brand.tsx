@@ -9,7 +9,7 @@ export interface BrandProps {
 export function Brand({ messages, compact = false, className = "" }: BrandProps) {
   return (
     <div className={`min-w-0 ${className}`}>
-      <div className="flex items-baseline whitespace-nowrap text-[1.12rem] font-medium tracking-[-0.045em] text-[#f1efe7]">
+      <div className="taskflow-wordmark flex items-baseline whitespace-nowrap text-[1.12rem] font-medium tracking-[-0.045em] text-[#f1efe7]">
         <span>Task</span>
         <span className="text-[#9aaa91]">Flow</span>
       </div>

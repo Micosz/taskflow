@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { translations } from "@/i18n/translations";
 
 import "./globals.css";
+import "./notebook.css";
 
 const defaultMessages = translations.en;
 
@@ -48,8 +49,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
-  colorScheme: "dark",
-  themeColor: "#080916",
+  colorScheme: "light dark",
+  themeColor: "#faf7f0",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
