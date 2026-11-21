@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent, type RefObject } from "react";
 import { BookOpen, CalendarDays, Pencil } from "lucide-react";
 import { courseInk, courseTabLabel } from "@/features/courses/course-stationery";
 import { parseQuickEntry, type QuickEntryDraft } from "@/features/tasks/quick-entry";
@@ -10,6 +10,7 @@ import { interpolate, type Locale, type TranslationMessages } from "@/i18n";
 import type { CreateTaskInput } from "@/types/task";
 
 interface QuickEntryProps {
+  inputRef: RefObject<HTMLInputElement | null>;
   categories: readonly string[];
   now: Date;
   locale: Locale;
@@ -18,7 +19,7 @@ interface QuickEntryProps {
   onSave: (input: CreateTaskInput) => Promise<void>;
 }
 
-export function QuickEntry({ categories, now, locale, messages, onReview, onSave }: QuickEntryProps) {
+export function QuickEntry({ inputRef, categories, now, locale, messages, onReview, onSave }: QuickEntryProps) {
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"ready" | "saving" | "error">("ready");
   const pending = useRef(false);
@@ -50,7 +51,7 @@ export function QuickEntry({ categories, now, locale, messages, onReview, onSave
     <form className="quick-entry" onSubmit={submit} aria-labelledby={id + "-heading"}>
       <header className="sheet-heading"><h2 id={id + "-heading"}><Pencil aria-hidden="true" /><label htmlFor={id}>{copy.quickTitle}</label></h2></header>
       <div className="quick-entry__line">
-        <input id={id} type="text" autoComplete="off" disabled={status === "saving"} value={text}
+        <input ref={inputRef} id={id} type="text" autoComplete="off" disabled={status === "saving"} value={text}
           aria-describedby={draft.dateConflict ? id + "-date-conflict" : undefined}
           onChange={(event) => { setText(event.target.value); setStatus("ready"); }} placeholder={copy.example} />
         <button className="notebook-primary" type="submit" disabled={!text.trim() || status === "saving"}>

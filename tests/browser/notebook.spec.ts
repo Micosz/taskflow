@@ -20,6 +20,7 @@ test("the date preview survives Enter and reload", async ({ page }) => {
   await expect(page.locator(".quick-entry__preview")).toContainText("14:00");
   await entry.press("Enter");
   await expect(entry).toHaveValue("");
+  await expect(entry).toBeFocused();
   await page.reload();
   await expect(entry).toBeVisible();
   expect(await savedTasks(page)).toEqual([expect.objectContaining({
@@ -42,12 +43,37 @@ test("a conflicting weekday opens the due date for keyboard review", async ({ pa
   await date.press("Escape");
   await expect(entry).toBeFocused();
   await expect(entry).toHaveValue(sentence);
-  await entry.press("Enter");
+  const dateChip = page.locator(".quick-entry__preview").getByRole("button", { name: /1 ธ.ค./ });
+  await dateChip.press("Enter");
+  await expect(date).toBeFocused();
+  await date.press("Escape");
+  await expect(dateChip).toBeFocused();
+  await dateChip.press("Enter");
   await expect(date).toBeFocused();
   await date.press("Enter");
   await expect(entry).toHaveValue("");
+  await expect(entry).toBeFocused();
   await page.reload();
   expect(await savedTasks(page)).toEqual([expect.objectContaining({ title: "อ่าน", dueDate: "2026-12-01" })]);
+});
+
+test("an impossible date has to be corrected before the task can be saved", async ({ page }) => {
+  const entry = page.getByRole("textbox", { name: "เพิ่มงานอย่างรวดเร็ว" });
+  await entry.fill("จด CS264 วันจันทร์ 2026-02-30 บ่ายสอง");
+  await entry.press("Enter");
+  const date = page.getByRole("dialog").locator('input[name="dueDate"]');
+  await expect(date).toBeFocused();
+  await expect(date).toHaveValue("");
+  await date.press("Enter");
+  await expect(date).toHaveAttribute("aria-invalid", "true");
+  expect(await savedTasks(page)).toEqual([]);
+  await date.fill("02/03/2026");
+  await date.press("Enter");
+  await expect(entry).toBeFocused();
+  await expect(entry).toHaveValue("");
+  expect(await savedTasks(page)).toEqual([expect.objectContaining({
+    title: "จด", dueDate: "2026-03-02", dueTime: "14:00",
+  })]);
 });
 
 test("the phone calendar has its own tab and preserves an unfinished entry", async ({ page }) => {

@@ -89,6 +89,8 @@ export function TaskFlowApp() {
   const [theme, setTheme] = useState<"paper" | "dark">("paper");
   const [formDraft, setFormDraft] = useState<QuickEntryDraft | null>(null);
   const [quickRevision, setQuickRevision] = useState(0);
+  const quickInputRef = useRef<HTMLInputElement>(null);
+  const focusQuickEntry = useCallback(() => quickInputRef.current?.focus(), []);
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -604,6 +606,7 @@ export function TaskFlowApp() {
                     <FocusHero task={focusTask} now={now} locale={locale} messages={messages}
                       busy={focusTask?.id === busyTaskId} onOpen={openDetail} onToggle={handleToggle} />
                     {view === "active" && <QuickEntry key={repositorySelection.scopeKey + "-" + quickRevision}
+                      inputRef={quickInputRef}
                       categories={categories} now={now} locale={locale} messages={messages}
                       onReview={(draft) => { openCreate(); setFormDraft(draft); }}
                       onSave={createAndNotify} />}
@@ -664,6 +667,7 @@ export function TaskFlowApp() {
         task={scopeIsCurrent ? editingTask : null}
         defaultCategory={defaultCategory}
         draft={scopeIsCurrent && !editingTask ? formDraft : null}
+        focusFallback={scopeIsCurrent && formDraft ? focusQuickEntry : undefined}
         courses={courseManager.courses}
         courseStatus={courseManager.status}
         messages={messages}

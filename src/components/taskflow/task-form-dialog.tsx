@@ -27,6 +27,7 @@ interface TaskFormDialogProps {
   task: Task | null;
   defaultCategory?: string;
   draft?: QuickEntryDraft | null;
+  focusFallback?: () => void;
   courses: readonly Course[];
   courseStatus: "loading" | "ready" | "error";
   messages: TranslationMessages;
@@ -60,6 +61,7 @@ export function TaskFormDialog({
   task,
   defaultCategory = "",
   draft = null,
+  focusFallback,
   courses,
   courseStatus,
   messages,
@@ -87,7 +89,7 @@ export function TaskFormDialog({
   const [errors, setErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  useDialogA11y(open, dialogRef, onClose);
+  useDialogA11y(open, dialogRef, onClose, focusFallback);
 
   const updateField = <Key extends keyof TaskFormValues>(
     key: Key,
