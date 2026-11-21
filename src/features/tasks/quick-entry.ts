@@ -1,4 +1,4 @@
-import { addDaysToKey, isValidDateKey, toDateKey } from "@/lib/date";
+import { addDaysToKey, fromDateKey, isValidDateKey, toDateKey } from "@/lib/date";
 import { courseTabLabel } from "@/features/courses/course-stationery";
 import { normalizeTimeInput, parseDateInput } from "./task-date-input";
 import type { TaskFormValues } from "./task-validation";
@@ -11,19 +11,46 @@ const numbers = ["", "หนึ่ง", "สอง", "สาม", "สี่", "
 const hourWords = "(สิบเอ็ด|สิบ|เก้า|แปด|เจ็ด|หก|ห้า|สี่|สาม|สอง|หนึ่ง|\\d{1,2})";
 type Found = { match: { index: number; 0: string }; value: string };
 
-function readDate(text: string, today: Date): Found | null {
-  const match = /มะรืนนี้|มะรืน|พรุ่งนี้|วันนี้|วัน(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์)|\b(?:today|tomorrow)\b|(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)|(?<!\d)\d{1,2}\/\d{1,2}\/\d{4}(?!\d)/i.exec(text);
-  if (!match) return null;
-  const token = match[0].toLowerCase();
-  let date: string | null;
-  if (match[1]) {
-    date = addDaysToKey(toDateKey(today), (weekdays.indexOf(match[1]) - today.getDay() + 7) % 7);
-  } else if (Object.hasOwn(relativeDays, token)) {
-    date = addDaysToKey(toDateKey(today), relativeDays[token]);
-  } else {
-    date = token.includes("/") ? parseDateInput(token) : isValidDateKey(token) ? token : null;
+export interface QuickEntryDraft extends TaskFormValues {
+  needsTimeReview: boolean;
+  dateConflict: { weekday: string; date: string } | null;
+}
+
+function writtenDateKey(token: string): string | null {
+  if (token.includes("/")) return parseDateInput(token);
+  return isValidDateKey(token) ? token : null;
+}
+
+function readDate(text: string, today: Date) {
+  const dateTokens = /มะรืนนี้|มะรืน|พรุ่งนี้|วันนี้|วัน(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|ศุกร์|เสาร์)|\b(?:today|tomorrow)\b|(?<!\d)(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})(?!\d)/gi;
+  const [first, second, third] = text.matchAll(dateTokens);
+  if (!first) return { remaining: text, dueDate: "", dateConflict: null };
+
+  // A weekday can qualify a written date several weeks away.
+  if (second && !third) {
+    const weekday = first[1] || second[1];
+    const written = first[2] || second[2];
+    if (weekday && written) {
+      const dueDate = writtenDateKey(written);
+      const agrees = dueDate && fromDateKey(dueDate).getDay() === weekdays.indexOf(weekday);
+      return {
+        remaining: removeMatch(removeMatch(text, second), first),
+        dueDate: dueDate ?? "",
+        dateConflict: agrees ? null : { weekday: "วัน" + weekday, date: written },
+      };
+    }
   }
-  return date ? { match, value: date } : null;
+
+  const token = first[0].toLowerCase();
+  let dueDate: string | null;
+  if (first[1]) {
+    dueDate = addDaysToKey(toDateKey(today), (weekdays.indexOf(first[1]) - today.getDay() + 7) % 7);
+  } else if (Object.hasOwn(relativeDays, token)) {
+    dueDate = addDaysToKey(toDateKey(today), relativeDays[token]);
+  } else {
+    dueDate = writtenDateKey(token);
+  }
+  return { remaining: dueDate ? removeMatch(text, first) : text, dueDate: dueDate ?? "", dateConflict: null };
 }
 
 const spokenTimes = [
@@ -57,9 +84,7 @@ function readTime(text: string): Found | null {
 const vagueTime = /(?:^|\s)(?:(?:ตอน|ช่วง)\s*)?(?:เช้า|สาย|บ่าย|เย็น|ค่ำ|ดึก)(?:\s*ๆ)?\s*$/;
 const timePrefix = /(?:ตอน|เวลา)\s*$/;
 
-function removeMatch(text: string, found: Found | null) {
-  if (!found) return text;
-  const { index, 0: token } = found.match;
+function removeMatch(text: string, { index, 0: token }: Found["match"]) {
   return text.slice(0, index) + " " + text.slice(index + token.length);
 }
 
@@ -82,12 +107,12 @@ function readCourse(text: string, categories: readonly string[]): Found | null {
 }
 
 /** Leave missing fields empty so the normal form can complete the draft. */
-export function parseQuickEntry(sentence: string, categories: readonly string[], now: Date): TaskFormValues & { needsTimeReview: boolean } {
+export function parseQuickEntry(sentence: string, categories: readonly string[], now: Date): QuickEntryDraft {
   let text = sentence.trim();
   const category = readCourse(text, categories);
-  text = removeMatch(text, category);
+  if (category) text = removeMatch(text, category.match);
   const date = readDate(text, now);
-  text = removeMatch(text, date);
+  text = date.remaining;
   const time = readTime(text);
   const vague = time ? null : vagueTime.exec(text);
   if (time) {
@@ -96,8 +121,9 @@ export function parseQuickEntry(sentence: string, categories: readonly string[],
     text = text.slice(0, vague.index);
   }
   return {
+    dateConflict: date.dateConflict,
     needsTimeReview: Boolean(vague),
     title: text.replace(/\s+/g, " ").trim(), description: "", category: category?.value ?? "",
-    eventType: "task", dueDate: date?.value ?? "", dueTime: time?.value ?? "",
+    eventType: "task", dueDate: date.dueDate, dueTime: time?.value ?? "",
   };
 }

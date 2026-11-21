@@ -43,7 +43,7 @@ import { LocalTaskMigrationDialog } from "./local-task-migration-dialog";
 import { FocusHero } from "./focus-hero";
 import { CourseShelf } from "./course-shelf";
 import { QuickEntry } from "./quick-entry";
-import type { TaskFormValues } from "@/features/tasks/task-validation";
+import type { QuickEntryDraft } from "@/features/tasks/quick-entry";
 import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 import { TaskFormDialog } from "./task-form-dialog";
@@ -87,7 +87,7 @@ export function TaskFlowApp() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [defaultCategory, setDefaultCategory] = useState("");
   const [theme, setTheme] = useState<"paper" | "dark">("paper");
-  const [formDraft, setFormDraft] = useState<TaskFormValues | null>(null);
+  const [formDraft, setFormDraft] = useState<QuickEntryDraft | null>(null);
   const [quickRevision, setQuickRevision] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
